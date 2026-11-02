@@ -189,6 +189,11 @@ def verify(loader, era_name, jar):
         idx = {}
         mcjar = os.path.join(ROOT, "mcjars", v, "client-named.jar")
         index_jar(mcjar, idx)
+        # Mojang's libraries (DataFixerUpper's Pair, Brigadier…) come with the game, not in the client jar
+        cpf = os.path.join(ROOT, "mcjars", v, "classpath.txt")
+        if os.path.exists(cpf):
+            for lib in open(cpf).read().split():
+                if "/com/mojang/" in lib and "blaze3d" not in lib: index_jar(lib, idx)
         ljs = loader_jars(loader, v)
         if loader in ("forge", "neoforge") and not ljs:
             print("  %s %s: no %s release for this version (skipped)" % (loader, v, loader))

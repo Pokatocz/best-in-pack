@@ -32,7 +32,7 @@ public class JeiBridge implements IModPlugin, Viewer {
     //#else
     @Override
     public ResourceLocation getPluginUid() {
-        return ResourceLocation.fromNamespaceAndPath("bestinpack", "jei");
+        return com.bestinpack.util.Ids.of("bestinpack", "jei");
     }
     //#endif
 
@@ -42,6 +42,7 @@ public class JeiBridge implements IModPlugin, Viewer {
         // Items hidden in JEI (edit mode, blacklist, KubeJS) are hidden here too – rebuild once JEI knows them,
         // and again whenever the player hides or shows something.
         com.bestinpack.index.ItemIndex.markDirty();
+        //#if MC >= 1.21 || MC < 1.20.2
         try {
             jeiRuntime.getJeiHelpers().getIngredientVisibility().registerListener(new mezz.jei.api.runtime.IIngredientVisibility.IListener() {
                 @Override
@@ -52,7 +53,26 @@ public class JeiBridge implements IModPlugin, Viewer {
         } catch (Throwable ignored) {
             // older JEI without visibility listeners
         }
+        //#else
+        //$$ // JEI 16 – 18 (1.20.2 – 1.20.6) only have the visibility API in some builds: use it when it is there.
+        //$$ visibility = null;
+        //$$ try {
+        //$$     Object helpers = jeiRuntime.getJeiHelpers();
+        //$$     Object vis = helpers.getClass().getMethod("getIngredientVisibility").invoke(helpers);
+        //$$     for (java.lang.reflect.Method m : vis.getClass().getMethods()) {
+        //$$         if (m.getName().equals("isIngredientVisible") && m.getParameterCount() == 2) isVisible = m;
+        //$$     }
+        //$$     if (isVisible != null) visibility = vis;
+        //$$ } catch (Throwable ignored) {
+        //$$     // this JEI cannot tell what is hidden
+        //$$ }
+        //#endif
     }
+
+    //#if MC < 1.21 && MC >= 1.20.2
+    //$$ private static Object visibility;
+    //$$ private static java.lang.reflect.Method isVisible;
+    //#endif
 
     @Override
     public void onRuntimeUnavailable() {
@@ -73,7 +93,16 @@ public class JeiBridge implements IModPlugin, Viewer {
     @Override
     public boolean isHidden(ItemStack stack) {
         IJeiRuntime r = runtime;
+        //#if MC >= 1.21 || MC < 1.20.2
         return r != null && !r.getJeiHelpers().getIngredientVisibility().isIngredientVisible(VanillaTypes.ITEM_STACK, stack);
+        //#else
+        //$$ if (r == null || visibility == null) return false;
+        //$$ try {
+        //$$     return !(Boolean) isVisible.invoke(visibility, VanillaTypes.ITEM_STACK, stack);
+        //$$ } catch (Throwable t) {
+        //$$     return false;
+        //$$ }
+        //#endif
     }
 
     @Override

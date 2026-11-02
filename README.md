@@ -27,7 +27,7 @@ better. Best in Pack reads the real stats of every item in your game and puts th
 - **Jump to an item** – hover an item in your inventory, JEI or REI and press B to open its row.
 - **JEI and REI** – click a row to see how to craft it.
 - **Client-only** – works on any server, nothing to install there.
-- **Fabric, Forge and NeoForge**, every Minecraft version from **1.21 to 26.3**.
+- **Fabric, Forge and NeoForge**, every Minecraft version from **1.20 to 26.3**.
 
 ## Screenshots
 
@@ -43,6 +43,10 @@ better. Best in Pack reads the real stats of every item in your game and puts th
 
 | Minecraft | Fabric | Forge | NeoForge |
 |---|---|---|---|
+| 1.20, 1.20.1 | `fabric-1.20-1.20.1` | `forge-1.20-1.20.1` | `forge-1.20-1.20.1` ² |
+| 1.20.2 | `fabric-1.20.2` | `forge-1.20.2` | `neoforge-1.20.2` |
+| 1.20.3, 1.20.4 | `fabric-1.20.3-1.20.4` | `forge-1.20.3-1.20.4` | `neoforge-1.20.3-1.20.4` |
+| 1.20.5, 1.20.6 | `fabric-1.20.5-1.20.6` | `forge-1.20.5-1.20.6` ³ | `neoforge-1.20.5-1.20.6` |
 | 1.21, 1.21.1 | `fabric-1.21-1.21.1` | `forge-1.21-1.21.1` | `neoforge-1.21-1.21.1` |
 | 1.21.2 – 1.21.4 | `fabric-1.21.2-1.21.4` | `forge-1.21.2-1.21.4` ¹ | `neoforge-1.21.2-1.21.4` |
 | 1.21.5 | `fabric-1.21.5` | `forge-1.21.5` | `neoforge-1.21.5` |
@@ -54,6 +58,8 @@ better. Best in Pack reads the real stats of every item in your game and puts th
 | 26.3 | `fabric-26.3` | `forge-26.3` | `neoforge-26.3` |
 
 ¹ Forge was never released for 1.21.2, so this file covers 1.21.3 and 1.21.4.
+² NeoForge for 1.20.1 is a fork of Forge 47 and runs the Forge file.
+³ Forge was never released for 1.20.5, so this file covers 1.20.6.
 Fabric needs Fabric API. JEI and REI are optional.
 
 ## Settings and modpacks
@@ -84,7 +90,8 @@ cd builds/neoforge-1.21-1.21.1 && gradle build
 tools/buildall.sh neoforge
 ```
 
-Requirements: Python 3, JDK 21 (and JDK 25 for 26.x), Gradle 9.5+ (Fabric: Gradle 9.8+ running on JDK 25).
+Requirements: Python 3, JDK 21 (plus JDK 17 for 1.20–1.20.4 and JDK 25 for 26.x), Gradle 9.5+ (Fabric: Gradle 9.8+
+running on JDK 25; Forge 1.20–1.20.4 and NeoForge 1.20.2: Gradle 8.14, set as `GRADLE8`).
 `tools/smoke.sh` runs the automatic in-game test used before every release.
 
 ## License

@@ -83,7 +83,12 @@ public final class ReiBridge implements Viewer {
     @Override
     public boolean typing() {
         var field = me.shedaniel.rei.api.client.REIRuntime.getInstance().getSearchTextField();
+        //#if MC >= 1.20.2
         return field != null && field.isFocused();
+        //#else
+        //$$ // REI 12 (1.20.1) for Forge does not expose isFocused() on its TextField; the widget behind it is a vanilla listener.
+        //$$ return field instanceof net.minecraft.client.gui.components.events.GuiEventListener l && l.isFocused();
+        //#endif
     }
 
     @Override

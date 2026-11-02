@@ -3,7 +3,9 @@ package com.bestinpack.index;
 import com.bestinpack.BestInPack;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
+//#if MC >= 1.20.5
 import net.minecraft.core.component.DataComponents;
+//#endif
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
@@ -28,15 +30,19 @@ import net.minecraft.world.item.HoneyBottleItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+//#if MC >= 1.20.5
 import net.minecraft.world.item.MaceItem;
+//#endif
 import net.minecraft.world.item.ProjectileWeaponItem;
 //#if MC < 1.21.5
 import net.minecraft.world.item.SwordItem;
 //#endif
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.TridentItem;
+//#if MC >= 1.20.5
 import net.minecraft.world.item.component.Tool;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
+//#endif
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -162,7 +168,11 @@ public final class ItemIndex {
         java.util.Set<Item> creative = config.onlyCreativeItems ? CreativeItems.collect(world) : null;
         int notInCreative = 0;
 
-        Item.TooltipContext tooltipContext = world != null ? Item.TooltipContext.of(world) : Item.TooltipContext.EMPTY;
+        //#if MC >= 1.20.5
+        Object tooltipContext = world != null ? Item.TooltipContext.of(world) : Item.TooltipContext.EMPTY;
+        //#else
+        //$$ Object tooltipContext = null; // 1.20.4 and older: tooltips need no context
+        //#endif
 
         Table food = foodTable();
         Table armor = armorTable();
@@ -328,19 +338,32 @@ public final class ItemIndex {
     // ------------------------------------------------------------------ food
 
     private static void indexFood(Table table, ItemStack stack, String id, String modId, String modName, String name, Player player) {
+        //#if MC >= 1.20.5
         FoodProperties food = stack.get(DataComponents.FOOD);
+        //#else
+        //$$ FoodProperties food = Platform.get().foodProperties(stack, player);
+        //#endif
         if (food == null) return;
         //#if MC >= 1.21.2
         //$$ net.minecraft.world.item.component.Consumable consumable = stack.get(DataComponents.CONSUMABLE);
         //#endif
 
         Row row = new Row(stack, id, modId, modName, name, table.columns.size());
+        //#if MC >= 1.20.5
         double hunger = food.nutrition();
         double saturation = food.saturation();
+        //#else
+        //$$ // Before 1.20.5 food stored a saturation modifier; the restored saturation is nutrition × modifier × 2.
+        //$$ double hunger = food.getNutrition();
+        //$$ double saturation = food.getNutrition() * food.getSaturationModifier() * 2.0;
+        //#endif
         //#if MC >= 1.21.2
         //$$ double seconds = consumable != null ? consumable.consumeSeconds() : 1.6;
-        //#else
+        //#elif MC >= 1.20.5
         double seconds = food.eatSeconds();
+        //#else
+        //$$ int useTicks = stack.getUseDuration();
+        //$$ double seconds = useTicks > 0 ? useTicks / 20.0 : (food.isFastFood() ? 0.8 : 1.6);
         //#endif
         row.values[F_HUNGER] = hunger;
         row.values[F_SAT] = saturation;
@@ -358,17 +381,22 @@ public final class ItemIndex {
         //$$         for (MobEffectInstance inst : apply.effects()) possibleEffects.add(new Object[]{inst, apply.probability()});
         //$$     }
         //$$ }
-        //#else
+        //#elif MC >= 1.20.5
         List<Object[]> possibleEffects = new ArrayList<>();
         for (FoodProperties.PossibleEffect possible : food.effects()) possibleEffects.add(new Object[]{possible.effect(), possible.probability()});
+        //#else
+        //$$ List<Object[]> possibleEffects = new ArrayList<>();
+        //$$ for (com.mojang.datafixers.util.Pair<MobEffectInstance, Float> possible : food.getEffects()) {
+        //$$     possibleEffects.add(new Object[]{possible.getFirst(), possible.getSecond()});
+        //$$ }
         //#endif
         for (Object[] possible : possibleEffects) {
             MobEffectInstance inst = (MobEffectInstance) possible[0];
             if (inst == null) continue;
             float probability = (Float) possible[1];
             if (!effects.isEmpty()) effects.append(", ");
-            String effName = Language.getInstance().getOrDefault(inst.getEffect().value().getDescriptionId());
-            boolean harmful = inst.getEffect().value().getCategory() == MobEffectCategory.HARMFUL;
+            String effName = Language.getInstance().getOrDefault(effectOf(inst).getDescriptionId());
+            boolean harmful = effectOf(inst).getCategory() == MobEffectCategory.HARMFUL;
             effects.append(harmful ? "-" : "+").append(effName);
             if (inst.getAmplifier() > 0) effects.append(' ').append(roman(inst.getAmplifier() + 1));
             if (inst.isInfiniteDuration()) effects.append(" (permanent)");
@@ -439,21 +467,21 @@ public final class ItemIndex {
     }
 
     private static void indexArmor(Table table, ItemStack stack, String id, String modId, String modName, String name,
-                                   Item.TooltipContext ctx, Player player) {
+                                   Object ctx, Player player) {
         EquipmentSlot slot = wornSlot(stack, player);
         if (slot == null) return;
         if (slot != EquipmentSlot.HEAD && slot != EquipmentSlot.CHEST && slot != EquipmentSlot.LEGS && slot != EquipmentSlot.FEET) return;
 
         AttributeAccumulator acc = new AttributeAccumulator();
-        stack.forEachModifier(slot, acc::accept);
+        acc.addFrom(stack, slot);
 
         Row row = new Row(stack, id, modId, modName, name, table.columns.size());
         row.texts[A_SLOT] = slotName(slot);
         row.values[A_SLOT] = slotOrder(slot);
         row.setFacet(slotName(slot));
-        row.values[A_ARMOR] = acc.get(Attributes.ARMOR, 0);
-        row.values[A_TOUGH] = acc.get(Attributes.ARMOR_TOUGHNESS, 0);
-        row.values[A_KB] = acc.get(Attributes.KNOCKBACK_RESISTANCE, 0);
+        row.values[A_ARMOR] = acc.get(ARMOR, 0);
+        row.values[A_TOUGH] = acc.get(TOUGHNESS, 0);
+        row.values[A_KB] = acc.get(KNOCKBACK, 0);
         row.values[A_DUR] = durability(stack);
         row.values[A_ENCH] = enchantability(stack);
 
@@ -462,8 +490,7 @@ public final class ItemIndex {
         int positiveBonuses = 0;
         for (Map.Entry<Holder<Attribute>, double[]> e : acc.map.entrySet()) {
             Attribute attr = e.getKey().value();
-            if (attr == Attributes.ARMOR.value() || attr == Attributes.ARMOR_TOUGHNESS.value()
-                    || attr == Attributes.KNOCKBACK_RESISTANCE.value()) continue;
+            if (attr == ARMOR.value() || attr == TOUGHNESS.value() || attr == KNOCKBACK.value()) continue;
             String label = describeBonus(attr, e.getValue());
             // Modern Industrialization's "Quantum Armor" attribute (also used by add-ons such as Extended
             // Industrialization): each point is a 25 % chance to cancel any damage, a full set makes you immune.
@@ -490,8 +517,13 @@ public final class ItemIndex {
             bonusScore += 1;
             positiveBonuses++;
         }
+        //#if MC >= 1.20.5
         ItemEnchantments baked = stack.get(DataComponents.ENCHANTMENTS);
-        if (baked != null && !baked.isEmpty()) {
+        boolean enchanted = baked != null && !baked.isEmpty();
+        //#else
+        //$$ boolean enchanted = stack.isEnchanted();
+        //#endif
+        if (enchanted) {
             if (!bonuses.isEmpty()) bonuses.append(", ");
             bonuses.append("enchanted");
             bonusScore += 1;
@@ -548,16 +580,21 @@ public final class ItemIndex {
     private static final BlockState COBWEB = Blocks.COBWEB.defaultBlockState();
 
     private static void indexWeapon(Table table, ItemStack stack, String id, String modId, String modName, String name,
-                                    Item.TooltipContext ctx, Player player) {
+                                    Object ctx, Player player) {
         // Bows and crossbows have no melee stats, and some modded ones carry a tool component (Draconic Evolution)
         // that would file them under axes; they are not what the Weapons & Tools tab ranks.
         if (stack.getItem() instanceof ProjectileWeaponItem) return;
         // Modular armor that can also mine (again Draconic Evolution) belongs to the Armor tab, not to Pickaxes.
         EquipmentSlot worn = wornSlot(stack, player);
         if (worn == EquipmentSlot.HEAD || worn == EquipmentSlot.CHEST || worn == EquipmentSlot.LEGS || worn == EquipmentSlot.FEET) return;
+        //#if MC >= 1.20.5
         Tool tool = stack.get(DataComponents.TOOL);
+        boolean hasTool = tool != null;
+        //#else
+        //$$ boolean hasTool = isLegacyTool(stack); // no tool component before 1.20.5
+        //#endif
         AttributeAccumulator acc = new AttributeAccumulator();
-        stack.forEachModifier(EquipmentSlot.MAINHAND, acc::accept);
+        acc.addFrom(stack, EquipmentSlot.MAINHAND);
         boolean shield = canBlock(stack);
         //#if MC >= 1.21.11
         //$$ net.minecraft.world.item.component.KineticWeapon kinetic = stack.get(DataComponents.KINETIC_WEAPON);
@@ -565,20 +602,19 @@ public final class ItemIndex {
         //#else
         boolean spear = false;
         //#endif
-        boolean weaponClass = isSwordLike(stack) || stack.getItem() instanceof TridentItem
-                || stack.getItem() instanceof MaceItem || spear;
-        boolean hasWeaponStats = acc.has(Attributes.ATTACK_DAMAGE) || acc.has(Attributes.ATTACK_SPEED) || weaponClass;
-        if (tool == null && !hasWeaponStats && !shield) return;
+        boolean weaponClass = isSwordLike(stack) || stack.getItem() instanceof TridentItem || isMace(stack) || spear;
+        boolean hasWeaponStats = acc.has(ATTACK_DAMAGE) || acc.has(ATTACK_SPEED) || weaponClass;
+        if (!hasTool && !hasWeaponStats && !shield) return;
 
         Row row = new Row(stack, id, modId, modName, name, table.columns.size());
 
         // Player base: 1 damage, 4 attacks/second.
-        double damage = acc.get(Attributes.ATTACK_DAMAGE, 1.0);
-        double speed = acc.get(Attributes.ATTACK_SPEED, 4.0);
+        double damage = acc.get(ATTACK_DAMAGE, 1.0);
+        double speed = acc.get(ATTACK_SPEED, 4.0);
         boolean weapon = hasWeaponStats && (damage > 1.0001 || weaponClass);
 
         double stone = 1, log = 1, dirt = 1, hay = 1, leaves = 1, cobweb = 1;
-        if (tool != null) {
+        if (hasTool) {
             stone = stack.getDestroySpeed(STONE);
             log = stack.getDestroySpeed(LOG);
             dirt = stack.getDestroySpeed(DIRT);
@@ -600,7 +636,7 @@ public final class ItemIndex {
             type = "Shears";
         } else if (shield) {
             type = "Shield";
-        } else if (tool != null) {
+        } else if (hasTool) {
             type = "Tool";
         } else {
             type = "Other";
@@ -625,15 +661,19 @@ public final class ItemIndex {
             row.values[W_SPEED] = speed;
             row.values[W_DPS] = damage * speed;
         }
-        if (tool != null && mining > 1.0001) {
+        if (hasTool && mining > 1.0001) {
             row.values[W_MINING] = mining;
         }
-        Tier tier = tool != null && mining > 1.0001 ? tierOf(stack, tool) : null; // only real mining tools have a tier
+        //#if MC >= 1.20.5
+        Tier tier = hasTool && mining > 1.0001 ? tierOf(stack, tool) : null; // only real mining tools have a tier
+        //#else
+        //$$ Tier tier = hasTool && mining > 1.0001 ? tierOfLegacy(stack) : null;
+        //#endif
         if (tier != null) {
             row.texts[W_TIER] = tier.label;
             row.values[W_TIER] = tier.level;
         }
-        if (tool != null && mining > 1.0001) {
+        if (hasTool && mining > 1.0001) {
             row.values[W_SCORE] = toolScore(tier, mining, stack.isDamageableItem() ? stack.getMaxDamage() : 0);
         }
         row.values[W_DUR] = durability(stack);
@@ -677,6 +717,53 @@ public final class ItemIndex {
         //#endif
     }
 
+    private static boolean isMace(ItemStack stack) {
+        //#if MC >= 1.20.5
+        return stack.getItem() instanceof MaceItem;
+        //#else
+        //$$ return false; // the mace came with 1.20.5 (1.21)
+        //#endif
+    }
+
+    //#if MC < 1.20.5
+    //$$ /** 1.20.4 and older have no tool component: a digger/shears class, or anything that mines a test block faster. */
+    //$$ private static boolean isLegacyTool(ItemStack stack) {
+    //$$     Item item = stack.getItem();
+    //$$     if (item instanceof net.minecraft.world.item.DiggerItem || item instanceof net.minecraft.world.item.ShearsItem) return true;
+    //$$     try {
+    //$$         for (BlockState s : new BlockState[]{STONE, LOG, DIRT, HAY, LEAVES, COBWEB}) {
+    //$$             if (stack.getDestroySpeed(s) > 1.0001f) return true;
+    //$$         }
+    //$$     } catch (Throwable ignored) {}
+    //$$     return false;
+    //$$ }
+    //$$
+    //$$ /** Tier before 1.20.5: the vanilla tiers by name, modded ones by what they harvest or by their harvest level. */
+    //$$ private static Tier tierOfLegacy(ItemStack stack) {
+    //$$     net.minecraft.world.item.Tier t = stack.getItem() instanceof net.minecraft.world.item.TieredItem ti ? ti.getTier() : null;
+    //$$     if (t == net.minecraft.world.item.Tiers.WOOD) return new Tier("Wood", 0, 1);
+    //$$     if (t == net.minecraft.world.item.Tiers.GOLD) return new Tier("Gold", 0.5, 1);
+    //$$     if (t == net.minecraft.world.item.Tiers.STONE) return new Tier("Stone", 1, 2);
+    //$$     if (t == net.minecraft.world.item.Tiers.IRON) return new Tier("Iron", 2, 3);
+    //$$     if (t == net.minecraft.world.item.Tiers.DIAMOND) return new Tier("Diamond", 3, 4);
+    //$$     if (t == net.minecraft.world.item.Tiers.NETHERITE) return new Tier("Netherite", 4, 4);
+    //$$     int level = -1;
+    //$$     try {
+    //$$         if (t != null) level = t.getLevel();
+    //$$     } catch (Throwable ignored) {}
+    //$$     // Pickaxe-like tools: what they really harvest (also right for Forge's sorted tiers) …
+    //$$     Tier probed = probeTier(stack);
+    //$$     if (probed != null) return probed.level() >= 3 && level >= 4 ? new Tier(level == 4 ? "Netherite" : "Netherite+", 4, 4) : probed;
+    //$$     // … axes, shovels and hoes of a modded material: the tier's harvest level.
+    //$$     if (level < 0) return null;
+    //$$     if (level == 0) return new Tier("Wood", 0, 1);
+    //$$     if (level == 1) return new Tier("Stone", 1, 2);
+    //$$     if (level == 2) return new Tier("Iron", 2, 3);
+    //$$     if (level == 3) return new Tier("Diamond", 3, 4);
+    //$$     return new Tier(level == 4 ? "Netherite" : "Netherite+", 4, 4);
+    //$$ }
+    //#endif
+
     /** Max durability, or NaN ("–") for items that cannot break. */
     private static double durability(ItemStack stack) {
         return stack.isDamageableItem() ? stack.getMaxDamage() : Double.NaN;
@@ -697,6 +784,7 @@ public final class ItemIndex {
         return levels * Math.sqrt(mining) * Math.log10(dur);
     }
 
+    //#if MC >= 1.20.5
     private static final Map<TagKey<?>, Tier> TIER_BY_TAG = new HashMap<>();
 
     static {
@@ -743,6 +831,12 @@ public final class ItemIndex {
             return new Tier("Any", 4, 4);
         }
         // Last resort (no drop rules at all, or an unreadable one): probe what the tool actually harvests.
+        return probeTier(stack);
+    }
+    //#endif
+
+    /** The tier from what the tool harvests: obsidian, diamond ore, iron ore, stone (pickaxe-like tools only). */
+    private static Tier probeTier(ItemStack stack) {
         try {
             if (stack.isCorrectToolForDrops(Blocks.OBSIDIAN.defaultBlockState())) return new Tier("Diamond+", 3, 4);
             if (stack.isCorrectToolForDrops(Blocks.DIAMOND_ORE.defaultBlockState())) return new Tier("Iron", 2, 3);
@@ -825,17 +919,59 @@ public final class ItemIndex {
 
     // ------------------------------------------------------------------ helpers
 
+    // Attributes as holders in every version (they became holders in 1.20.5).
+    private static final Holder<Attribute> ARMOR = attr(Attributes.ARMOR);
+    private static final Holder<Attribute> TOUGHNESS = attr(Attributes.ARMOR_TOUGHNESS);
+    private static final Holder<Attribute> KNOCKBACK = attr(Attributes.KNOCKBACK_RESISTANCE);
+    private static final Holder<Attribute> ATTACK_DAMAGE = attr(Attributes.ATTACK_DAMAGE);
+    private static final Holder<Attribute> ATTACK_SPEED = attr(Attributes.ATTACK_SPEED);
+
+    //#if MC >= 1.20.5
+    private static Holder<Attribute> attr(Holder<Attribute> attribute) {
+        return attribute;
+    }
+
+    private static net.minecraft.world.effect.MobEffect effectOf(MobEffectInstance inst) {
+        return inst.getEffect().value();
+    }
+    //#else
+    //$$ private static Holder<Attribute> attr(Attribute attribute) {
+    //$$     return BuiltInRegistries.ATTRIBUTE.wrapAsHolder(attribute);
+    //$$ }
+    //$$
+    //$$ private static net.minecraft.world.effect.MobEffect effectOf(MobEffectInstance inst) {
+    //$$     return inst.getEffect();
+    //$$ }
+    //#endif
+
     /** Sums attribute modifiers the way the game applies them: (base + adds) * (1 + multBase) * Π(1 + multTotal). */
     private static final class AttributeAccumulator {
         final Map<Holder<Attribute>, double[]> map = new LinkedHashMap<>();
 
+        /** All modifiers the stack gives in this slot (loader events included). */
+        void addFrom(ItemStack stack, EquipmentSlot slot) {
+            //#if MC >= 1.20.5
+            stack.forEachModifier(slot, this::accept);
+            //#else
+            //$$ for (Map.Entry<Attribute, AttributeModifier> e : stack.getAttributeModifiers(slot).entries()) accept(attr(e.getKey()), e.getValue());
+            //#endif
+        }
+
         void accept(Holder<Attribute> attribute, AttributeModifier modifier) {
             double[] v = map.computeIfAbsent(attribute, k -> new double[]{0, 0, 1});
+            //#if MC >= 1.20.5
             switch (modifier.operation()) {
                 case ADD_VALUE -> v[0] += modifier.amount();
                 case ADD_MULTIPLIED_BASE -> v[1] += modifier.amount();
                 case ADD_MULTIPLIED_TOTAL -> v[2] *= (1 + modifier.amount());
             }
+            //#else
+            //$$ switch (modifier.getOperation()) {
+            //$$     case ADDITION -> v[0] += modifier.getAmount();
+            //$$     case MULTIPLY_BASE -> v[1] += modifier.getAmount();
+            //$$     case MULTIPLY_TOTAL -> v[2] *= (1 + modifier.getAmount());
+            //$$ }
+            //#endif
         }
 
         boolean has(Holder<Attribute> attribute) {
@@ -877,10 +1013,14 @@ public final class ItemIndex {
     };
 
     /** Mod-written tooltip lines (abilities, lore) – everything that is not a standard stat line. */
-    private static String collectNotes(ItemStack stack, Item.TooltipContext ctx, Player player) {
+    private static String collectNotes(ItemStack stack, Object ctx, Player player) {
         List<Component> lines;
         try {
-            lines = stack.getTooltipLines(ctx, player, TooltipFlag.NORMAL);
+            //#if MC >= 1.20.5
+            lines = stack.getTooltipLines((Item.TooltipContext) ctx, player, TooltipFlag.NORMAL);
+            //#else
+            //$$ lines = stack.getTooltipLines(player, TooltipFlag.NORMAL);
+            //#endif
         } catch (Throwable t) {
             return "";
         }

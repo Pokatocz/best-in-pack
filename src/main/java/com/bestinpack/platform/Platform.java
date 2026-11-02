@@ -45,6 +45,13 @@ public interface Platform {
         return false;
     }
 
+    //#if MC < 1.20.5
+    //$$ /** Food stats before 1.20.5 (Forge/NeoForge let items answer per stack and per eater). */
+    //$$ default net.minecraft.world.food.FoodProperties foodProperties(ItemStack stack, Player player) {
+    //$$     return stack.getItem().getFoodProperties();
+    //$$ }
+    //$$
+    //#endif
     /** Loader hook: enchantability when the loader lets items compute it, -1 otherwise. */
     default int enchantability(ItemStack stack) {
         return -1;

@@ -68,7 +68,14 @@ public class BestInPackForge {
         //$$ }
         //#else
         net.minecraftforge.eventbus.api.IEventBus bus = net.minecraftforge.common.MinecraftForge.EVENT_BUS;
+        //#if MC >= 1.20.6
         bus.addListener((TickEvent.ClientTickEvent.Post e) -> BestInPackClient.onClientTick(Minecraft.getInstance()));
+        //#else
+        //$$ // Forge before 50 (1.20.6) has one tick event with a phase.
+        //$$ bus.addListener((TickEvent.ClientTickEvent e) -> {
+        //$$     if (e.phase == TickEvent.Phase.END) BestInPackClient.onClientTick(Minecraft.getInstance());
+        //$$ });
+        //#endif
         bus.addListener((ClientPlayerNetworkEvent.LoggingIn e) -> BestInPackClient.onJoin());
         bus.addListener((ClientPlayerNetworkEvent.LoggingOut e) -> BestInPackClient.onLeave());
         bus.addListener((ScreenEvent.KeyPressed.Pre e) -> {
@@ -78,7 +85,13 @@ public class BestInPackForge {
         bus.addListener((ScreenEvent.Render.Pre e) -> BestInPackClient.onScreenRender(e.getScreen()));
         bus.addListener((ItemTooltipEvent e) -> BestInPackClient.onTooltip(e.getItemStack(), e.getToolTip()));
         if (Boolean.getBoolean("bestinpack.selftest")) {
+            //#if MC >= 1.20.6
             com.bestinpack.client.SmokeTest.install(r -> bus.addListener((TickEvent.ClientTickEvent.Post e) -> r.run()));
+            //#else
+            //$$ com.bestinpack.client.SmokeTest.install(r -> bus.addListener((TickEvent.ClientTickEvent e) -> {
+            //$$     if (e.phase == TickEvent.Phase.END) r.run();
+            //$$ }));
+            //#endif
         }
         //#endif
     }

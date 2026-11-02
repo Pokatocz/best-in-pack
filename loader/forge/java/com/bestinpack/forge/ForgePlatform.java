@@ -74,6 +74,13 @@ final class ForgePlatform implements Platform {
         return stack.getEquipmentSlot(); // Forge item hook, null unless the mod overrides it
     }
 
+    //#if MC < 1.20.5
+    //$$ @Override
+    //$$ public net.minecraft.world.food.FoodProperties foodProperties(ItemStack stack, Player player) {
+    //$$     return stack.getFoodProperties(player); // Forge: items may answer per stack and per eater
+    //$$ }
+    //$$
+    //#endif
     @Override
     public Boolean canBlock(ItemStack stack) {
         //#if MC >= 1.21.5

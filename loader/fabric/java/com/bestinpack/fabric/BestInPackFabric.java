@@ -58,7 +58,11 @@ public class BestInPackFabric implements ClientModInitializer {
             ScreenEvents.beforeRender(screen).register((s, graphics, mouseX, mouseY, delta) -> BestInPackClient.onScreenRender(s));
             //#endif
         });
+        //#if MC >= 1.20.5
         ItemTooltipCallback.EVENT.register((stack, context, flag, lines) -> BestInPackClient.onTooltip(stack, lines));
+        //#else
+        //$$ ItemTooltipCallback.EVENT.register((stack, flag, lines) -> BestInPackClient.onTooltip(stack, lines));
+        //#endif
 
         if (Boolean.getBoolean("bestinpack.selftest")) {
             com.bestinpack.client.SmokeTest.install(r -> ClientTickEvents.END_CLIENT_TICK.register(c -> r.run()));

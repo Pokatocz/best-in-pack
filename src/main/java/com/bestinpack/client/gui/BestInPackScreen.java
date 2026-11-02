@@ -15,7 +15,9 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.ImageButton;
 import net.minecraft.client.gui.components.Tooltip;
+//#if MC >= 1.20.2
 import net.minecraft.client.gui.components.WidgetSprites;
+//#endif
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
@@ -75,7 +77,12 @@ public class BestInPackScreen extends Screen {
     private static final net.minecraft.resources.ResourceLocation LIST_BACKGROUND = Ids.vanilla("textures/gui/inworld_menu_list_background.png");
     //#endif
 
+    //#if MC >= 1.20.2
     private static final WidgetSprites GEAR = new WidgetSprites(Ids.of("bestinpack", "gear"), Ids.of("bestinpack", "gear_hover"));
+    //#else
+    //$$ // 1.20.1 has no sprite atlas for buttons: one texture with the normal gear on top and the hover gear below.
+    //$$ private static final net.minecraft.resources.ResourceLocation GEAR_TEXTURE = Ids.of("bestinpack", "textures/gui/gear_button.png");
+    //#endif
 
     /** Remembered between openings. */
     private static Category lastCategory = Category.FOOD;
@@ -220,11 +227,19 @@ public class BestInPackScreen extends Screen {
                 .bounds(this.width / 2 - 50, this.height - 26, 100, 20).build());
 
         // Settings live in config/bestinpack/ – the gear opens that folder, like JEI's wrench.
+        //#if MC >= 1.20.2
         ImageButton gear = new ImageButton(this.width - 30, this.height - 26, 20, 20, GEAR,
                 btn -> {
                     config.save();
                     Gfx.openFolder(Config.dir());
                 }, Component.translatable("bestinpack.button.config"));
+        //#else
+        //$$ ImageButton gear = new ImageButton(this.width - 30, this.height - 26, 20, 20, 0, 0, 20, GEAR_TEXTURE, 20, 40,
+        //$$         btn -> {
+        //$$             config.save();
+        //$$             Gfx.openFolder(Config.dir());
+        //$$         }, Component.translatable("bestinpack.button.config"));
+        //#endif
         gear.setTooltip(Tooltip.create(Component.translatable("bestinpack.button.config.tooltip")));
         this.addRenderableWidget(gear);
 
@@ -760,6 +775,7 @@ public class BestInPackScreen extends Screen {
             }
             case LIST -> {
                 // Options-screen list: tiled texture with the vanilla header/footer separators.
+                //#if MC >= 1.20.5
                 context.enableScissor(left, top, right, bottom);
                 for (int ty = top; ty < bottom; ty += 32) {
                     for (int tx = left; tx < right; tx += 32) {
@@ -769,6 +785,12 @@ public class BestInPackScreen extends Screen {
                 context.disableScissor();
                 Gfx.blit(context, Screen.INWORLD_HEADER_SEPARATOR, left, top - 2, 0f, 0f, right - left, 2, 32, 2);
                 Gfx.blit(context, Screen.INWORLD_FOOTER_SEPARATOR, left, bottom, 0f, 0f, right - left, 2, 32, 2);
+                //#else
+                //$$ // Before 1.20.5 lists were drawn over the dirt texture with black edges; a dark fill keeps it readable.
+                //$$ context.fill(left, top, right, bottom, 0xC0101010);
+                //$$ context.fill(left, top - 1, right, top, 0xFF000000);
+                //$$ context.fill(left, bottom, right, bottom + 1, 0xFF000000);
+                //#endif
                 context.fill(left, headerBottom, right, headerBottom + 1, theme.separator());
             }
             case COMPACT, BOOK -> {
@@ -814,6 +836,9 @@ public class BestInPackScreen extends Screen {
 
     @Override
     public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
+        //#if MC < 1.20.2
+        //$$ this.renderBackground(context); // Screen.render only draws the background itself since 1.20.2
+        //#endif
         super.render(context, mouseX, mouseY, delta);
 
         context.drawCenteredString(this.font, this.title, this.width / 2, 8, 0xFFFFFFFF);
@@ -1315,8 +1340,20 @@ public class BestInPackScreen extends Screen {
         }
     }
 
+    //#if MC >= 1.20.2
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+        return scrollBy(mouseX, mouseY, horizontalAmount, verticalAmount)
+                || super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
+    }
+    //#else
+    //$$ @Override
+    //$$ public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
+    //$$     return scrollBy(mouseX, mouseY, 0, amount) || super.mouseScrolled(mouseX, mouseY, amount);
+    //$$ }
+    //#endif
+
+    private boolean scrollBy(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
         if (table != null && mouseX >= tableX - 8 && mouseX < tableX + tableW + 8 + SCROLLBAR_W && mouseY >= headerY && mouseY < listBottom) {
             Minecraft client = Minecraft.getInstance();
             boolean shift = com.bestinpack.client.Keys.shiftDown();
@@ -1330,7 +1367,7 @@ public class BestInPackScreen extends Screen {
             clampScroll();
             return true;
         }
-        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
+        return false;
     }
 
     private boolean handleKey(int keyCode, int scanCode) {

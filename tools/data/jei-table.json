@@ -1,55 +1,77 @@
 {
+ "1.20": {
+  "fabric": "F8RIUFLt|14.0.0.11",
+  "forge": "cNizrVlx|14.0.0.11"
+ },
+ "1.20.1": {
+  "fabric": "YRfUnbXb|15.56.0.205",
+  "forge": "9jqubC9n|15.56.0.205"
+ },
+ "1.20.2": {
+  "fabric": "Ak6HvJFC|16.0.0.2",
+  "forge": "WqGVuPbX|16.0.0.2"
+ },
+ "1.20.4": {
+  "fabric": "QwWkNxeF|17.3.1.5",
+  "forge": "yaG8EPUM|17.3.1.5",
+  "neoforge": "ae5o0o24|17.3.1.5"
+ },
+ "1.20.6": {
+  "fabric": "YhyO5Dkr|18.0.0.66",
+  "forge": "7JXhXEj2|18.0.0.66",
+  "neoforge": "bjuWVc7q|18.0.0.66"
+ },
  "1.21": {
-  "neoforge": "1vC6z8wV|19.70.0.469",
   "fabric": "WkRLMWAY|19.70.0.469",
-  "forge": "fhFT6u04|19.70.0.469"
+  "forge": "fhFT6u04|19.70.0.469",
+  "neoforge": "1vC6z8wV|19.70.0.469"
  },
  "1.21.1": {
-  "neoforge": "1vC6z8wV|19.70.0.469",
   "fabric": "WkRLMWAY|19.70.0.469",
-  "forge": "fhFT6u04|19.70.0.469"
- },
- "1.21.11": {
-  "neoforge": "tqj8DTrA|27.54.0.116",
-  "fabric": "e56U66Sq|27.54.0.116"
- },
- "26.1": {
-  "neoforge": "60HrmNPh|29.53.0.115",
-  "fabric": "j5HrJ8M2|29.53.0.115"
- },
- "26.1.1": {
-  "neoforge": "60HrmNPh|29.53.0.115",
-  "fabric": "j5HrJ8M2|29.53.0.115"
- },
- "26.1.2": {
-  "neoforge": "60HrmNPh|29.53.0.115",
-  "fabric": "j5HrJ8M2|29.53.0.115"
- },
- "26.3": {
-  "neoforge": "hGAWEBN8|31.17.0.108",
-  "fabric": "1Uzmw8Mr|31.17.0.108"
- },
- "26.2": {
-  "neoforge": "lU7Sz0zI|30.48.0.244",
-  "fabric": "j62WSkzi|30.48.0.244"
+  "forge": "fhFT6u04|19.70.0.469",
+  "neoforge": "1vC6z8wV|19.70.0.469"
  },
  "1.21.10": {
-  "neoforge": "O2CbqrXh|26.3.0.31",
-  "fabric": "8yGN172x|26.3.0.31"
+  "fabric": "8yGN172x|26.3.0.31",
+  "neoforge": "O2CbqrXh|26.3.0.31"
  },
- "1.21.9": {
-  "neoforge": "tWzeZ6Nc|26.1.1.24"
+ "1.21.11": {
+  "fabric": "e56U66Sq|27.54.0.116",
+  "neoforge": "tqj8DTrA|27.54.0.116"
  },
- "1.21.8": {
-  "neoforge": "ru8HioLg|24.2.0.6"
- },
- "1.21.7": {
-  "neoforge": "8dSoXgnn|23.1.0.8"
+ "1.21.4": {
+  "neoforge": "V5vS77Gp|20.0.0.4"
  },
  "1.21.5": {
   "neoforge": "Up8I2nu2|21.4.0.27"
  },
- "1.21.4": {
-  "neoforge": "V5vS77Gp|20.0.0.4"
+ "1.21.7": {
+  "neoforge": "8dSoXgnn|23.1.0.8"
+ },
+ "1.21.8": {
+  "neoforge": "ru8HioLg|24.2.0.6"
+ },
+ "1.21.9": {
+  "neoforge": "tWzeZ6Nc|26.1.1.24"
+ },
+ "26.1": {
+  "fabric": "j5HrJ8M2|29.53.0.115",
+  "neoforge": "60HrmNPh|29.53.0.115"
+ },
+ "26.1.1": {
+  "fabric": "j5HrJ8M2|29.53.0.115",
+  "neoforge": "60HrmNPh|29.53.0.115"
+ },
+ "26.1.2": {
+  "fabric": "j5HrJ8M2|29.53.0.115",
+  "neoforge": "60HrmNPh|29.53.0.115"
+ },
+ "26.2": {
+  "fabric": "j62WSkzi|30.48.0.244",
+  "neoforge": "lU7Sz0zI|30.48.0.244"
+ },
+ "26.3": {
+  "fabric": "1Uzmw8Mr|31.17.0.108",
+  "neoforge": "hGAWEBN8|31.17.0.108"
  }
 }

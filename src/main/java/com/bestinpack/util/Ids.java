@@ -22,13 +22,26 @@ public final class Ids {
     //$$ public static Identifier tryParse(String s) {
     //$$     return Identifier.tryParse(s);
     //$$ }
+    //#elif MC >= 1.21
+    //$$ public static ResourceLocation of(String namespace, String path) {
+    //$$     return ResourceLocation.fromNamespaceAndPath(namespace, path);
+    //$$ }
+    //$$
+    //$$ public static ResourceLocation vanilla(String path) {
+    //$$     return ResourceLocation.withDefaultNamespace(path);
+    //$$ }
+    //$$
+    //$$ public static ResourceLocation tryParse(String s) {
+    //$$     return ResourceLocation.tryParse(s);
+    //$$ }
     //#else
+    // 1.20.x: the constructors were still public.
     public static ResourceLocation of(String namespace, String path) {
-        return ResourceLocation.fromNamespaceAndPath(namespace, path);
+        return new ResourceLocation(namespace, path);
     }
 
     public static ResourceLocation vanilla(String path) {
-        return ResourceLocation.withDefaultNamespace(path);
+        return new ResourceLocation("minecraft", path);
     }
 
     public static ResourceLocation tryParse(String s) {

@@ -1,70 +1,96 @@
 {
- "26.3": {
-  "neoforge": "dZ7iNvS4|22.0.5+neoforge",
-  "fabric": "1pMaB6So|22.0.5+fabric"
+ "1.20": {
+  "fabric": "WbL7MStR|9.2.14+fabric",
+  "forge": "1MKTLiiG|9.2.14+forge"
+ },
+ "1.20.1": {
+  "fabric": "WbL7MStR|9.2.14+fabric",
+  "forge": "1MKTLiiG|9.2.14+forge"
+ },
+ "1.20.2": {
+  "fabric": "C2sB1Yq5|10.1.20+fabric",
+  "forge": "uo9eXNGR|10.1.20+minecraftforge",
+  "neoforge": "PByNovaH|10.1.20+neoforge"
+ },
+ "1.20.4": {
+  "fabric": "kVjQWX0l|11.1.17+fabric",
+  "forge": "ZFDazCA3|11.1.17+minecraftforge",
+  "neoforge": "1ROEGmfO|11.1.17+neoforge"
+ },
+ "1.20.5": {
+  "fabric": "iqKljDnd|12.0.29+fabric",
+  "neoforge": "Th6yhTAa|12.0.29+neoforge"
+ },
+ "1.20.6": {
+  "fabric": "vvN5UGnq|12.1.4+fabric",
+  "neoforge": "whouAO7b|12.1.4+neoforge"
+ },
+ "1.21": {
+  "fabric": "Pzc2FP5K|13.0.11+fabric",
+  "neoforge": "1IiqEQGl|13.0.11+neoforge"
+ },
+ "1.21.1": {
+  "fabric": "Pzc2FP5K|13.0.11+fabric",
+  "neoforge": "1IiqEQGl|13.0.11+neoforge"
+ },
+ "1.21.10": {
+  "fabric": "9eRDsZKH|18.0.8+fabric",
+  "neoforge": "Z4ZAg0kG|18.0.8+neoforge"
+ },
+ "1.21.11": {
+  "fabric": "uNdfrcQ8|19.0.1+fabric",
+  "neoforge": "EvL9NK2R|19.0.1+neoforge"
+ },
+ "1.21.2": {
+  "fabric": "i3y5Sm14|14.0.4+fabric",
+  "neoforge": "avlNAUxs|14.0.4+neoforge"
+ },
+ "1.21.3": {
+  "fabric": "i3y5Sm14|14.0.4+fabric",
+  "neoforge": "avlNAUxs|14.0.4+neoforge"
+ },
+ "1.21.4": {
+  "fabric": "73nlw3WM|15.0.3+fabric",
+  "neoforge": "qOJoTaPQ|15.0.3+neoforge"
+ },
+ "1.21.5": {
+  "fabric": "ImZUcNzP|16.1.4+fabric",
+  "neoforge": "sqGCUsVI|16.1.4+neoforge"
+ },
+ "1.21.6": {
+  "fabric": "VxCkJjz7|17.0.6+fabric",
+  "neoforge": "KFBGyMei|17.0.6+neoforge"
+ },
+ "1.21.7": {
+  "fabric": "XcJm5LH4|17.0.8+fabric",
+  "neoforge": "L9u1QLTx|17.0.8+neoforge"
+ },
+ "1.21.8": {
+  "fabric": "XcJm5LH4|17.0.8+fabric",
+  "neoforge": "L9u1QLTx|17.0.8+neoforge"
+ },
+ "1.21.9": {
+  "fabric": "qkIZZKUH|18.0.5+fabric",
+  "neoforge": "54QMD2an|18.0.5+neoforge"
+ },
+ "26.1": {
+  "fabric": "TZJ7aDWD|20.0.4+fabric",
+  "neoforge": "HupR52cO|20.0.4+neoforge"
+ },
+ "26.1.1": {
+  "fabric": "TZJ7aDWD|20.0.4+fabric",
+  "neoforge": "HupR52cO|20.0.4+neoforge"
+ },
+ "26.1.2": {
+  "fabric": "9kMQ7HXI|20.1.17+fabric",
+  "neoforge": "fyNzvIcr|20.1.17+neoforge"
  },
  "26.2": {
   "fabric": "ohb3PBGZ|21.1.12+fabric",
   "neoforge": "tihphFAj|21.1.12+neoforge"
  },
- "26.1.2": {
-  "neoforge": "fyNzvIcr|20.1.17+neoforge",
-  "fabric": "9kMQ7HXI|20.1.17+fabric"
- },
- "1.21": {
-  "neoforge": "1IiqEQGl|13.0.11+neoforge",
-  "fabric": "Pzc2FP5K|13.0.11+fabric"
- },
- "1.21.1": {
-  "neoforge": "1IiqEQGl|13.0.11+neoforge",
-  "fabric": "Pzc2FP5K|13.0.11+fabric"
- },
- "26.1": {
-  "neoforge": "HupR52cO|20.0.4+neoforge",
-  "fabric": "TZJ7aDWD|20.0.4+fabric"
- },
- "26.1.1": {
-  "neoforge": "HupR52cO|20.0.4+neoforge",
-  "fabric": "TZJ7aDWD|20.0.4+fabric"
- },
- "1.21.11": {
-  "neoforge": "EvL9NK2R|19.0.1+neoforge",
-  "fabric": "uNdfrcQ8|19.0.1+fabric"
- },
- "1.21.10": {
-  "neoforge": "Z4ZAg0kG|18.0.8+neoforge",
-  "fabric": "9eRDsZKH|18.0.8+fabric"
- },
- "1.21.9": {
-  "neoforge": "54QMD2an|18.0.5+neoforge",
-  "fabric": "qkIZZKUH|18.0.5+fabric"
- },
- "1.21.7": {
-  "neoforge": "L9u1QLTx|17.0.8+neoforge",
-  "fabric": "XcJm5LH4|17.0.8+fabric"
- },
- "1.21.8": {
-  "neoforge": "L9u1QLTx|17.0.8+neoforge",
-  "fabric": "XcJm5LH4|17.0.8+fabric"
- },
- "1.21.6": {
-  "neoforge": "KFBGyMei|17.0.6+neoforge",
-  "fabric": "VxCkJjz7|17.0.6+fabric"
- },
- "1.21.5": {
-  "neoforge": "sqGCUsVI|16.1.4+neoforge",
-  "fabric": "ImZUcNzP|16.1.4+fabric"
- },
- "1.21.4": {
-  "neoforge": "qOJoTaPQ|15.0.3+neoforge",
-  "fabric": "73nlw3WM|15.0.3+fabric"
- },
- "1.21.2": {
-  "neoforge": "avlNAUxs|14.0.4+neoforge",
-  "fabric": "i3y5Sm14|14.0.4+fabric"
- },
- "1.21.3": {
-  "neoforge": "avlNAUxs|14.0.4+neoforge",
-  "fabric": "i3y5Sm14|14.0.4+fabric"
+ "26.3": {
+  "fabric": "1pMaB6So|22.0.5+fabric",
+  "neoforge": "dZ7iNvS4|22.0.5+neoforge"
  }
 }

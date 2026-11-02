@@ -62,7 +62,13 @@ for c in chain:  # child libraries win over the parent's (same group:artifact)
             continue
         seen[key] = path
         cp.append(path)
-cp.append(os.path.join(GAME, "versions", base["id"], base["id"] + ".jar"))
+# like the vanilla launcher: the game jar is versions/<id>/<id>.jar of the launched version, copied from the parent
+# (Forge's -DignoreList names it by ${version_name}, so it must carry the launched version's name)
+game_jar = os.path.join(GAME, "versions", VID, VID + ".jar")
+if not os.path.exists(game_jar):
+    import shutil
+    shutil.copy2(os.path.join(GAME, "versions", base["id"], base["id"] + ".jar"), game_jar)
+cp.append(game_jar)
 
 sub = {"${auth_player_name}": "Tester", "${version_name}": VID, "${game_directory}": GAME,
        "${assets_root}": os.path.join(GAME, "assets"), "${assets_index_name}": base["assetIndex"]["id"],

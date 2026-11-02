@@ -56,8 +56,10 @@ public final class Gfx {
         //$$ com.mojang.blaze3d.Blaze3D.openPath(dir);
         //#elif MC >= 1.21.11
         //$$ net.minecraft.util.Util.getPlatform().openPath(dir);
+        //#elif MC >= 1.21
+        //$$ net.minecraft.Util.getPlatform().openPath(dir);
         //#else
-        net.minecraft.Util.getPlatform().openPath(dir);
+        net.minecraft.Util.getPlatform().openFile(dir.toFile());
         //#endif
     }
 }

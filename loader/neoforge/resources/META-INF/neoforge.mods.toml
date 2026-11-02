@@ -18,6 +18,9 @@ displayTest="IGNORE_ALL_VERSION"
 [[dependencies.bestinpack]]
 modId="neoforge"
 type="required"
+//#if MC < 1.20.5
+//$$mandatory=true
+//#endif
 versionRange="[${neo_min},)"
 ordering="NONE"
 side="CLIENT"
@@ -25,6 +28,9 @@ side="CLIENT"
 [[dependencies.bestinpack]]
 modId="minecraft"
 type="required"
+//#if MC < 1.20.5
+//$$mandatory=true
+//#endif
 versionRange="${mc_range}"
 ordering="NONE"
 side="CLIENT"
@@ -32,6 +38,9 @@ side="CLIENT"
 [[dependencies.bestinpack]]
 modId="jei"
 type="optional"
+//#if MC < 1.20.5
+//$$mandatory=false
+//#endif
 versionRange="*"
 ordering="NONE"
 side="CLIENT"
@@ -39,6 +48,9 @@ side="CLIENT"
 [[dependencies.bestinpack]]
 modId="roughlyenoughitems"
 type="optional"
+//#if MC < 1.20.5
+//$$mandatory=false
+//#endif
 versionRange="*"
 ordering="NONE"
 side="CLIENT"

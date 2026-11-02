@@ -26,7 +26,12 @@ final class WorldStarter {
         LevelSettings settings = new LevelSettings(name, GameType.CREATIVE, false, Difficulty.NORMAL, true,
                 new net.minecraft.world.level.GameRules(), WorldDataConfiguration.DEFAULT);
         //#endif
+        //#if MC >= 1.20.3
         client.createWorldOpenFlows().createFreshLevel(name, settings, new WorldOptions(1234L, false, false),
                 WorldPresets::createNormalWorldDimensions, Screens.current());
+        //#else
+        //$$ client.createWorldOpenFlows().createFreshLevel(name, settings, new WorldOptions(1234L, false, false),
+        //$$         WorldPresets::createNormalWorldDimensions);
+        //#endif
     }
 }

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.3 – Minecraft 1.20.x
+- Fabric, Forge and NeoForge for every Minecraft version from 1.20 to 1.20.6 (11 more files, same features).
+  NeoForge 1.20.1 uses the Forge 1.20–1.20.1 file.
+
 ## 0.9.3
 - Modpacks can set the default open key in `config/bestinpack/bestinpack.json` (`"openKey": "N"`).
 

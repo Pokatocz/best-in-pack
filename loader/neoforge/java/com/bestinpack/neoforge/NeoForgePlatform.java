@@ -10,7 +10,7 @@ import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.loading.FMLPaths;
-//#if MC < 1.21.5
+//#if MC >= 1.21 && MC < 1.21.5
 import net.neoforged.neoforge.common.ItemAbilities;
 //#endif
 
@@ -41,8 +41,11 @@ final class NeoForgePlatform implements Platform {
         //#if MC >= 1.21.2
         //$$ if (level == null) return 0;
         //$$ return stack.getBurnTime(RecipeType.SMELTING, level.fuelValues());
-        //#else
+        //#elif MC >= 1.20.5
         return stack.getBurnTime(RecipeType.SMELTING);
+        //#else
+        // NeoForge 20.2: the stack answers -1 for vanilla fuels; CommonHooks adds the vanilla table and the event.
+        //$$ return net.neoforged.neoforge.common.CommonHooks.getBurnTime(stack, RecipeType.SMELTING);
         //#endif
         //#endif
     }
@@ -69,12 +72,21 @@ final class NeoForgePlatform implements Platform {
         //#endif
     }
 
+    //#if MC < 1.20.5
+    //$$ @Override
+    //$$ public net.minecraft.world.food.FoodProperties foodProperties(ItemStack stack, Player player) {
+    //$$     return stack.getFoodProperties(player); // NeoForge: items may answer per stack and per eater
+    //$$ }
+    //$$
+    //#endif
     @Override
     public Boolean canBlock(ItemStack stack) {
         //#if MC >= 1.21.5
         //$$ return null; // the blocks_attacks component is read by the shared code
-        //#else
+        //#elif MC >= 1.21
         return stack.canPerformAction(ItemAbilities.SHIELD_BLOCK);
+        //#else
+        //$$ return stack.canPerformAction(net.neoforged.neoforge.common.ToolActions.SHIELD_BLOCK); // renamed ItemAbilities in 1.21
         //#endif
     }
 

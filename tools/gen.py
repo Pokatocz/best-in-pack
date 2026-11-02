@@ -2,7 +2,7 @@
 import os, shutil, sys, json
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pp
-from targets import ERAS, NEOFORGE, FORGE, era, modrinth_id, java_for, jei_fabric_maven, BLAMEJARED_REPO
+from targets import ERAS, NEOFORGE, FORGE, era, modrinth_id, java_for, toolchain_for, jei_fabric_maven, BLAMEJARED_REPO
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MOD_VERSION = open(os.path.join(ROOT, "VERSION")).read().strip()
@@ -50,7 +50,8 @@ def generate(loader, era_name):
     if os.path.isdir(os.path.join(out, "src")): shutil.rmtree(os.path.join(out, "src"))
     os.makedirs(out, exist_ok=True)
     v = pp.vnum(mc)
-    java = java_for(mc)
+    java = java_for(mc)        # class files / fabric.mod.json
+    tc = toolchain_for(mc)     # JDK that compiles and runs the dev client
     src_java = os.path.join(out, "src/main/java")
     src_res = os.path.join(out, "src/main/resources")
     pp.process_tree(os.path.join(ROOT, "src/main/java"), src_java, v, loader)
@@ -58,6 +59,10 @@ def generate(loader, era_name):
     pp.process_tree(os.path.join(ROOT, "loader", loader, "java"), src_java, v, loader)
     if os.path.isdir(os.path.join(ROOT, "loader", loader, "resources")):
         pp.process_tree(os.path.join(ROOT, "loader", loader, "resources"), src_res, v, loader)
+    if loader == "neoforge" and v < pp.vnum("1.20.5"):
+        # NeoForge up to 20.4 reads META-INF/mods.toml (neoforge.mods.toml came with 20.5)
+        meta = os.path.join(src_res, "META-INF")
+        os.replace(os.path.join(meta, "neoforge.mods.toml"), os.path.join(meta, "mods.toml"))
 
     jei = pick("jei", mc, loader, versions)
     jei_dep = 'compileOnly "maven.modrinth:jei:%s"' % jei if jei else None
@@ -103,11 +108,11 @@ def generate(loader, era_name):
         }
         if jei: fmj["entrypoints"]["jei_mod_plugin"] = ["com.bestinpack.compat.JeiBridge"]
         json.dump(fmj, open(os.path.join(src_res, "fabric.mod.json"), "w"), indent=2)
-        write_fabric(out, mc, java, api, deps, versions)
+        write_fabric(out, mc, java, tc, api, deps, versions)
     elif loader == "neoforge":
-        write_neoforge(out, mc, java, deps)
+        write_neoforge(out, mc, java, tc, deps)
     elif loader == "forge":
-        write_forge(out, mc, java, deps)
+        write_forge(out, mc, java, tc, deps)
     open(os.path.join(out, "gradle.properties"), "w").write(
         "org.gradle.jvmargs=-Xmx2G\norg.gradle.parallel=false\norg.gradle.daemon=false\n")
     print(out)
@@ -136,7 +141,49 @@ MODRINTH_REPO = """    exclusiveContent {
     }"""
 
 
-def write_neoforge(out, mc, java, deps):
+def write_neoforge_ng(out, mc, java, tc, deps):
+    """NeoForge 20.2 predates ModDevGradle's metadata: NeoGradle 7 (Gradle 8) builds it (Mojang names, no reobf)."""
+    open(os.path.join(out, "settings.gradle"), "w").write("""pluginManagement {
+    repositories {
+        maven { url = 'https://maven.neoforged.net/releases' }
+        maven { url = 'https://repo1.maven.org/maven2' }
+        gradlePluginPortal()
+    }
+}
+rootProject.name = 'bestinpack-neoforge'
+""")
+    open(os.path.join(out, "build.gradle"), "w").write("""plugins {
+    id 'java-library'
+    id 'net.neoforged.gradle.userdev' version '7.0.192'
+}
+version = '%(ver)s'
+base { archivesName = 'BestInPack-neoforge' }
+java.toolchain.languageVersion = JavaLanguageVersion.of(%(tc)d)
+repositories {
+    maven { url = 'https://repo1.maven.org/maven2' }
+%(modrinth)s
+}
+runs {
+    configureEach { modSource project.sourceSets.main }
+    client {
+        workingDirectory project.file('run')
+        systemProperty 'bestinpack.selftest', System.getProperty('bestinpack.selftest', 'false')
+        systemProperty 'fml.earlyWindowControl', 'false'
+        jvmArgument '-Xmx3G'
+    }
+}
+dependencies {
+    implementation 'net.neoforged:neoforge:%(neo)s'
+    %(deps)s
+}
+tasks.withType(JavaCompile).configureEach { options.release = %(java)d; options.encoding = 'UTF-8' }
+""" % {"ver": MOD_VERSION, "java": java, "tc": tc, "neo": NEOFORGE[mc], "modrinth": MODRINTH_REPO,
+       "deps": "\n    ".join(deps)})
+
+
+def write_neoforge(out, mc, java, tc, deps):
+    if pp.vnum(mc) < pp.vnum("1.20.3"):
+        return write_neoforge_ng(out, mc, java, tc, deps)
     open(os.path.join(out, "settings.gradle"), "w").write("""pluginManagement {
     repositories {
         maven { url = 'https://maven.neoforged.net/releases' }
@@ -152,7 +199,7 @@ rootProject.name = 'bestinpack-neoforge'
 }
 version = '%(ver)s'
 base { archivesName = 'BestInPack-neoforge' }
-java.toolchain.languageVersion = JavaLanguageVersion.of(%(java)d)
+java.toolchain.languageVersion = JavaLanguageVersion.of(%(tc)d)
 repositories {
     maven { url = 'https://repo1.maven.org/maven2' }
 %(modrinth)s
@@ -173,11 +220,11 @@ dependencies {
     %(deps)s
 }
 tasks.withType(JavaCompile).configureEach { options.release = %(java)d; options.encoding = 'UTF-8' }
-""" % {"ver": MOD_VERSION, "java": java, "neo": NEOFORGE[mc], "modrinth": MODRINTH_REPO, "env": NEO_ENV,
+""" % {"ver": MOD_VERSION, "java": java, "tc": tc, "neo": NEOFORGE[mc], "modrinth": MODRINTH_REPO, "env": NEO_ENV,
        "deps": "\n    ".join(deps)})
 
 
-def write_fabric(out, mc, java, api, deps, versions):
+def write_fabric(out, mc, java, tc, api, deps, versions):
     obf = not mc.startswith("26")
     plugin = "id 'fabric-loom' version '1.19.3'" if obf else "id 'net.fabricmc.fabric-loom' version '1.19.3'"
     mappings = "    mappings loom.officialMojangMappings()\n" if obf else ""
@@ -220,14 +267,14 @@ dependencies {
     %(deps)s
 }
 tasks.withType(JavaCompile).configureEach { it.options.release = %(java)d; it.options.encoding = 'UTF-8' }
-java { toolchain.languageVersion = JavaLanguageVersion.of(%(java)d) }
+java { toolchain.languageVersion = JavaLanguageVersion.of(%(tc)d) }
 """ % {"plugin": plugin, "ver": MOD_VERSION, "mc": mc, "mappings": mappings, "impl": impl, "api": api,
        # 26.x Fabric API needs loader 0.18.4+; 1.21.x keeps the loader it was tested with
        "loader": "0.19.5",
-       "deps": "\n    ".join(deps), "java": java, "modrinth": MODRINTH_REPO + "\n" + BLAMEJARED_REPO})
+       "deps": "\n    ".join(deps), "java": java, "tc": tc, "modrinth": MODRINTH_REPO + "\n" + BLAMEJARED_REPO})
 
 
-def write_forge(out, mc, java, deps):
+def write_forge(out, mc, java, tc, deps):
     open(os.path.join(out, "settings.gradle"), "w").write("""pluginManagement {
     repositories {
         maven { url = 'https://maven.minecraftforge.net/' }
@@ -237,6 +284,8 @@ def write_forge(out, mc, java, deps):
 }
 rootProject.name = 'bestinpack-forge'
 """)
+    if pp.vnum(mc) < pp.vnum("1.20.5"):
+        return write_forge_srg(out, mc, java, tc, deps)
     mappings = "    mappings channel: 'official', version: '%s'\n" % mc if not mc.startswith("26") else ""
     open(os.path.join(out, "build.gradle"), "w").write("""plugins {
     id 'java'
@@ -244,7 +293,7 @@ rootProject.name = 'bestinpack-forge'
 }
 version = '%(ver)s'
 base { archivesName = 'BestInPack-forge' }
-java.toolchain.languageVersion = JavaLanguageVersion.of(%(java)d)
+java.toolchain.languageVersion = JavaLanguageVersion.of(%(tc)d)
 minecraft {
 %(mappings)s    runs {
         configureEach { workingDir = layout.projectDirectory.dir('run') }
@@ -271,8 +320,52 @@ sourceSets.each {
     it.output.resourcesDir = dir
     it.java.destinationDirectory = dir
 }
-""" % {"ver": MOD_VERSION, "java": java, "mappings": mappings, "mc": mc, "forge": FORGE[mc], "deps": "\n    ".join(deps),
+""" % {"ver": MOD_VERSION, "java": java, "tc": tc, "mappings": mappings, "mc": mc, "forge": FORGE[mc], "deps": "\n    ".join(deps),
        "modrinth": MODRINTH_REPO})
+
+
+def write_forge_srg(out, mc, java, tc, deps):
+    """Forge 46 – 49 (1.20 – 1.20.4) runs with SRG names: ForgeGradle 6 (Gradle 8) builds and reobfuscates the JAR.
+    Mods from Modrinth are SRG-named production JARs, so compile dependencies go through fg.deobf."""
+    deps = [d.replace('compileOnly "', 'compileOnly fg.deobf("', 1) + ")" for d in deps]
+    open(os.path.join(out, "build.gradle"), "w").write("""plugins {
+    id 'java'
+    id 'net.minecraftforge.gradle' version '[6.0.24,6.2)'
+}
+version = '%(ver)s'
+base { archivesName = 'BestInPack-forge' }
+java.toolchain.languageVersion = JavaLanguageVersion.of(%(tc)d)
+minecraft {
+    mappings channel: 'official', version: '%(mc)s'
+    runs {
+        client {
+            workingDirectory project.file('run')
+            property 'bestinpack.selftest', System.getProperty('bestinpack.selftest', 'false')
+            mods { bestinpack { source sourceSets.main } }
+        }
+    }
+}
+repositories {
+    maven { url = 'https://repo1.maven.org/maven2' }
+%(modrinth)s
+}
+dependencies {
+    minecraft 'net.minecraftforge:forge:%(mc)s-%(forge)s'
+    %(deps)s
+}
+tasks.withType(JavaCompile).configureEach { options.release = %(java)d; options.encoding = 'UTF-8' }
+// The released JAR must use SRG names like the game does at runtime on these Forge versions.
+jar.finalizedBy('reobfJar')
+%(merge)s""" % {"ver": MOD_VERSION, "java": java, "tc": tc, "mc": mc, "forge": FORGE[mc], "deps": "\n    ".join(deps),
+       # Forge 49 (1.20.3+) loads a dev mod from one folder only: classes and resources must share it
+       "merge": "" if pp.vnum(mc) < pp.vnum("1.20.3") else """sourceSets.each {
+    def dir = layout.buildDirectory.dir("sourcesSets/$it.name")
+    it.output.resourcesDir = dir
+    it.java.destinationDirectory = dir
+}
+""",
+       # plain repository: fg.deobf serves the remapped copies from its own local repo under the same group
+       "modrinth": "    maven { name = 'Modrinth'; url = 'https://api.modrinth.com/maven' }"})
 
 
 if __name__ == "__main__":

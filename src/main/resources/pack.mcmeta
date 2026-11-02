@@ -1,9 +1,15 @@
 {
   "pack": {
     "description": "Best in Pack resources",
+//#if MC >= 1.21
     "pack_format": 34,
     "supported_formats": [34, 9999],
     "min_format": 34,
+//#else
+//$$    "pack_format": 15,
+//$$    "supported_formats": [15, 9999],
+//$$    "min_format": 15,
+//#endif
     "max_format": 9999
   }
 }
