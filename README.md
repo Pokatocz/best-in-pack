@@ -11,8 +11,6 @@ Press <b>B</b> and see every item from every mod, ranked.</p>
 <a href="CHANGELOG.md">Changelog</a>
 </p>
 
-![Armor tab in All the Mods 10](docs/screenshots/armor.png)
-
 Big modpacks add hundreds of swords, chestplates, foods and fuels – and nothing tells you which one is actually
 better. Best in Pack reads the real stats of every item in your game and puts them in sortable tables.
 
@@ -27,13 +25,6 @@ better. Best in Pack reads the real stats of every item in your game and puts th
 - **JEI and REI** – click a row to see how to craft it.
 - **Client-only** – works on any server, nothing to install there.
 - **Fabric, Forge and NeoForge**, every Minecraft version from **1.21 to 26.3**.
-
-## Screenshots
-
-| | |
-|---|---|
-| ![Weapons & Tools](docs/screenshots/weapons.png) | ![Food](docs/screenshots/food.png) |
-| ![Fuel](docs/screenshots/fuel.png) | ![Shift tooltip rank](docs/screenshots/tooltip.png) |
 
 ## Which file do I need?
 
