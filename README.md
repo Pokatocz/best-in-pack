@@ -14,17 +14,30 @@ Press <b>B</b> and see every item from every mod, ranked.</p>
 Big modpacks add hundreds of swords, chestplates, foods and fuels – and nothing tells you which one is actually
 better. Best in Pack reads the real stats of every item in your game and puts them in sortable tables.
 
+![Armor tab in All the Mods 10](docs/screenshots/armor.jpg)
+
 ## Features
 
 - **Four tabs** – Food, Armor, Weapons & Tools, Fuel – with every item from every mod, sorted by what matters
   (DPS, armor and toughness, hunger and saturation, burn time…). Click any column to sort by it.
 - **Search** by name, `@mod` to show one mod, `-word` to leave things out.
 - **Details** shows every stat, including special bonuses like flight or damage immunity.
+- **Have** shows only the items in your inventory – items you have are green in every list.
 - **Shift tooltip rank** – hold Shift over any item: *Best in Pack: #2 of 14 weapons (by DPS)*.
 - **Jump to an item** – hover an item in your inventory, JEI or REI and press B to open its row.
 - **JEI and REI** – click a row to see how to craft it.
 - **Client-only** – works on any server, nothing to install there.
 - **Fabric, Forge and NeoForge**, every Minecraft version from **1.21 to 26.3**.
+
+## Screenshots
+
+*All the Mods 10 (NeoForge 1.21.1)*
+
+| | |
+|---|---|
+| ![Weapons & Tools](docs/screenshots/weapons.jpg) | ![Food](docs/screenshots/food.jpg) |
+| ![Fuel](docs/screenshots/fuel.jpg) | ![Armor with Details](docs/screenshots/details.jpg) |
+| ![Have – only items in your inventory](docs/screenshots/have.jpg) | ![Shift tooltip rank](docs/screenshots/tooltip.png) |
 
 ## Which file do I need?
 
