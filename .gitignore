@@ -1,0 +1,9 @@
+# generated per loader/version by tools/gen.py
+builds/
+dist/
+# downloaded game jars and loader jars (tools/fetch_mc.py, tools/verify.py)
+mcjars/
+tools/tiny-remapper.jar
+__pycache__/
+*.log
+.gradle/

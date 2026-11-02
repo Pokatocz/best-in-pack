@@ -1,0 +1,27 @@
+modLoader="javafml"
+loaderVersion="[${forge_min},)"
+license="MIT"
+clientSideOnly=true
+
+[[mods]]
+modId="bestinpack"
+version="${version}"
+displayName="Best in Pack"
+authors="Pokato"
+logoFile="assets/bestinpack/icon.png"
+description='''Which food, armor, weapon, tool and fuel is the best in your modpack? Press B to see every item ranked. Hold Shift over an item to see its rank.'''
+displayTest="IGNORE_ALL_VERSION"
+
+[[dependencies.bestinpack]]
+modId="forge"
+mandatory=true
+versionRange="[${forge_min},)"
+ordering="NONE"
+side="CLIENT"
+
+[[dependencies.bestinpack]]
+modId="minecraft"
+mandatory=true
+versionRange="${mc_range}"
+ordering="NONE"
+side="CLIENT"

@@ -1,0 +1,16 @@
+name: Idea or feature request
+description: Suggest something new (a column, a tab, support for another mod, …)
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: What should Best in Pack do, and why would it help?
+    validations:
+      required: true
+  - type: input
+    id: setup
+    attributes:
+      label: Minecraft version and loader you play on
+      placeholder: e.g. 1.21.1 NeoForge

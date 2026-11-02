@@ -1,0 +1,9 @@
+{
+  "pack": {
+    "description": "Best in Pack resources",
+    "pack_format": 34,
+    "supported_formats": [34, 9999],
+    "min_format": 34,
+    "max_format": 9999
+  }
+}
