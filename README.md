@@ -101,7 +101,10 @@ out of the release JARs.
 - Every reference the JARs make to Minecraft and the loader is resolved against each game version they cover
   (`tools/verify.py`, 68 loader/version combinations).
 - Every build runs the automatic in-game test on the newest version of its range (`tools/smokeall.sh`, 38 builds):
-  chat messages, the key, every tab, search, sorting, Details, JEI/REI, B over an inventory item, the tooltip rank.
+  chat messages, the key, every tab, search, sorting, Details, B over an inventory item, the tooltip rank.
+- The click on a row that opens the recipe is tested with JEI in the 28 builds for which the test found a JEI
+  release for that loader and game version; the other 10 run without a recipe viewer. REI is tested in separate
+  runs on Fabric 1.20.1, 1.21.11 and 26.3 and NeoForge 1.20.4, 1.21.1 and 26.3 (`tools/smokerei.sh`).
 - Every release JAR is started in a real Fabric, Forge or NeoForge install of every game version it covers
   (`tools/prodall.sh`, 69 combinations, including the Forge 1.20–1.20.1 JAR on NeoForge 1.20.1).
 - Fabric up to 1.21.11 and Forge up to 1.20.4 run remapped JARs: for 0.9.4 the whole in-game test also ran in a
