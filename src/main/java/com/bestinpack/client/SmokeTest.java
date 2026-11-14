@@ -76,6 +76,14 @@ public final class SmokeTest {
     private static void waitForWorld(Minecraft client) {
         Screen screen = Screens.current();
         if (ticks % 100 == 0) log("waiting, screen=" + (screen == null ? "none" : screen.getClass().getSimpleName()) + " level=" + (client.level != null));
+        // NeoForge and Forge show a warning screen first when some mod loaded with warnings (REI's @OnlyIn on NeoForge
+        // 26.3): go on to the title screen like a player pressing "Proceed to main menu".
+        if (!worldRequested && client.level == null && screen != null && ticks > 100
+                && screen.getClass().getSimpleName().equals("LoadingErrorScreen")) {
+            log("leaving the loader's warning screen " + screen.getClass().getName());
+            Screens.set(new TitleScreen());
+            return;
+        }
         if (!worldRequested && client.level == null && screen instanceof TitleScreen && ticks > 40) {
             worldRequested = true;
             log("creating world");
@@ -486,7 +494,6 @@ public final class SmokeTest {
                         .inheritIO().start().waitFor();
             }
         } catch (Exception ignored) {}
-        Keys.setCursor(guiX * scale, guiY * scale);
         try {
             java.lang.reflect.Field fx = net.minecraft.client.MouseHandler.class.getDeclaredField("xpos");
             java.lang.reflect.Field fy = net.minecraft.client.MouseHandler.class.getDeclaredField("ypos");
@@ -494,7 +501,13 @@ public final class SmokeTest {
             fy.setAccessible(true);
             fx.setDouble(client.mouseHandler, guiX * scale);
             fy.setDouble(client.mouseHandler, guiY * scale);
-        } catch (ReflectiveOperationException ignored) {}
+            Keys.setCursor(guiX * scale, guiY * scale);
+        } catch (ReflectiveOperationException e) {
+            // A remapped production JAR (Fabric up to 1.21.11, Forge up to 1.20.4): the fields have other names there,
+            // so the X pointer event alone has to carry the position. Do not warp the GLFW cursor as well - GLFW drops
+            // the motion event that lands exactly where it was just told to put the cursor, and the game would never
+            // hear about the move.
+        }
     }
 
     private static void shot(Minecraft client, String name) {

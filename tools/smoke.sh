@@ -20,7 +20,7 @@ rm -rf run/saves run/config/bestinpack run/screenshots
 mkdir -p run/mods
 rm -f run/mods/*.jar
 # ForgeGradle 6 dev runs use Mojang names, but mods from Modrinth for Forge 1.20 – 1.20.4 are SRG-named: those are
-# tested in a real Forge install instead (tools/forgeprod.sh), the dev run goes without them.
+# tested in a real Forge install instead (tools/prodcheck.sh), the dev run goes without them.
 grep -q "net.minecraftforge.gradle' version '\[6" build.gradle && [ -n "$EXTRA" ] && echo "SMOKE note: extra mods skipped in the ForgeGradle 6 dev run" && EXTRA=
 [ -n "$EXTRA" ] && cp "$EXTRA"/*.jar run/mods/ 2>/dev/null
 grep -q onboardAccessibility run/options.txt 2>/dev/null || printf "onboardAccessibility:false\nnarrator:0\ntutorialStep:none\njoinedFirstServer:true\nskipMultiplayerWarning:true\n" >> run/options.txt

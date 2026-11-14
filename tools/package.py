@@ -2,7 +2,7 @@
 Usage: package.py"""
 import os, shutil, sys, zipfile
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from targets import ERAS
+from targets import ERAS, loaders_for
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VERSION = open(os.path.join(ROOT, "VERSION")).read().strip()
@@ -15,14 +15,16 @@ def main():
     found = []
     for loader in ("fabric", "forge", "neoforge"):
         for name, _compile, _versions in ERAS:
-            libs = os.path.join(ROOT, "builds", "%s-%s" % (loader, name), "build", "libs")
-            jars = [j for j in (os.listdir(libs) if os.path.isdir(libs) else [])
-                    if j.endswith(".jar") and "sources" not in j and "-dev" not in j]
-            if not jars:
+            if loader not in loaders_for(name):
+                continue
+            # only the JAR of the current version (an older build must never be packaged under the new name)
+            built = os.path.join(ROOT, "builds", "%s-%s" % (loader, name), "build", "libs",
+                                 "BestInPack-%s-%s.jar" % (loader, VERSION))
+            if not os.path.isfile(built):
                 print("MISSING %s %s" % (loader, name))
                 continue
             out = "BestInPack-%s-%s-%s.jar" % (loader, name, VERSION)
-            shutil.copy2(os.path.join(libs, jars[0]), os.path.join(DIST, out))
+            shutil.copy2(built, os.path.join(DIST, out))
             found.append(out)
     # all JARs in one zip, plus the sources
     with zipfile.ZipFile(os.path.join(DIST, "BestInPack-%s-all-jars.zip" % VERSION), "w", zipfile.ZIP_DEFLATED) as z:

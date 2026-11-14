@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.4
+- The release JARs no longer include the in-game self-test (`SmokeTest`, which drives the mouse with `xdotool`
+  on the test machine). It only runs in development runs; `gradle build -PwithSelfTest` keeps it. No gameplay changes.
+- `tools/jarcheck.py` checks every release JAR before publishing; `tools/prodcheck.sh` / `tools/prodall.sh` start
+  the JARs in real Fabric, Forge and NeoForge installs of every game version they cover.
+- Self-test: works in remapped production installs too and steps over the loader's "loaded with warnings" screen.
+
 ## 0.9.3 – Minecraft 1.20.x
 - Fabric, Forge and NeoForge for every Minecraft version from 1.20 to 1.20.6 (11 more files, same features).
   NeoForge 1.20.1 uses the Forge 1.20–1.20.1 file.

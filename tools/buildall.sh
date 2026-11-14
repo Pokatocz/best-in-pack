@@ -3,7 +3,7 @@
 L="$1"; shift
 cd "$(dirname "$0")/.."
 ERAS="$@"
-[ -z "$ERAS" ] && ERAS=$(python3 -c "import sys; sys.path.insert(0,'tools'); from targets import ERAS; print(' '.join(e[0] for e in ERAS))")
+[ -z "$ERAS" ] && ERAS=$(python3 -c "import sys; sys.path.insert(0,'tools'); from targets import ERAS, loaders_for; print(' '.join(e[0] for e in ERAS if '$L' in loaders_for(e[0])))")
 # Tools (override with environment variables): Gradle 9.5+ for NeoForge/Forge, Gradle 9.8+ on JDK 25 for Fabric (Loom 1.19),
 # Gradle 8.x (GRADLE8) for ForgeGradle 6 (Forge 1.20 – 1.20.4)
 GRADLE=${GRADLE:-gradle}; GRADLE_FABRIC=${GRADLE_FABRIC:-$GRADLE}

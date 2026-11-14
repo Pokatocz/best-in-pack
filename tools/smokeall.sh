@@ -4,7 +4,7 @@
 L="$1"; shift
 cd "$(dirname "$0")/.."
 ERAS="$@"
-[ -z "$ERAS" ] && ERAS=$(python3 -c "import sys; sys.path.insert(0,'tools'); from targets import ERAS; print(' '.join(e[0] for e in ERAS))")
+[ -z "$ERAS" ] && ERAS=$(python3 -c "import sys; sys.path.insert(0,'tools'); from targets import ERAS, loaders_for; print(' '.join(e[0] for e in ERAS if '$L' in loaders_for(e[0])))")
 for E in $ERAS; do
   D=builds/$L-$E
   MC=$(python3 -c "import sys; sys.path.insert(0,'tools'); from targets import era; print(era('$E')[1])")

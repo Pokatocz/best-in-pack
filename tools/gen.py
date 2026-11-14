@@ -113,6 +113,11 @@ def generate(loader, era_name):
         write_neoforge(out, mc, java, tc, deps)
     elif loader == "forge":
         write_forge(out, mc, java, tc, deps)
+    # Release JARs carry no test code: the in-game self-test (SmokeTest, which drives the mouse with xdotool) only
+    # runs in development runs (runClient), so it stays out of everything that is published.
+    # `gradle build -PwithSelfTest` keeps it, for tools/prodcheck.sh with SELFTEST=true.
+    with open(os.path.join(out, "build.gradle"), "a") as f:
+        f.write("\ntasks.named('jar') { if (!project.hasProperty('withSelfTest')) exclude 'com/bestinpack/client/SmokeTest*' }\n")
     open(os.path.join(out, "gradle.properties"), "w").write(
         "org.gradle.jvmargs=-Xmx2G\norg.gradle.parallel=false\norg.gradle.daemon=false\n")
     print(out)

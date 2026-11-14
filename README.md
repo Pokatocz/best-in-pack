@@ -92,7 +92,21 @@ tools/buildall.sh neoforge
 
 Requirements: Python 3, JDK 21 (plus JDK 17 for 1.20–1.20.4 and JDK 25 for 26.x), Gradle 9.5+ (Fabric: Gradle 9.8+
 running on JDK 25; Forge 1.20–1.20.4 and NeoForge 1.20.2: Gradle 8.14, set as `GRADLE8`).
-`tools/smoke.sh` runs the automatic in-game test used before every release.
+`tools/smoke.sh` runs the automatic in-game test used before every release, `tools/jarcheck.py` checks the finished
+JARs and `tools/prodcheck.sh` starts one in a real Fabric, Forge or NeoForge install. The self-test class is left
+out of the release JARs.
+
+## How a release is tested
+
+- Every reference the JARs make to Minecraft and the loader is resolved against each game version they cover
+  (`tools/verify.py`, 68 loader/version combinations).
+- Every build runs the automatic in-game test on the newest version of its range (`tools/smokeall.sh`, 38 builds):
+  chat messages, the key, every tab, search, sorting, Details, JEI/REI, B over an inventory item, the tooltip rank.
+- Every release JAR is started in a real Fabric, Forge or NeoForge install of every game version it covers
+  (`tools/prodall.sh`, 69 combinations, including the Forge 1.20–1.20.1 JAR on NeoForge 1.20.1).
+- Fabric up to 1.21.11 and Forge up to 1.20.4 run remapped JARs: for 0.9.4 the whole in-game test also ran in a
+  real install of Fabric 1.20.1 and 1.21.11 and Forge 1.20.1 and 1.20.4 (`gradle build -PwithSelfTest`).
+- `tools/jarcheck.py` checks version, Java level and that no test code is in any release JAR.
 
 ## License
 
