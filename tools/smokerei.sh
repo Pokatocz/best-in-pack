@@ -8,6 +8,7 @@ for E in "$@"; do
   python3 tools/testmods.py $L $MC $D/testmods-rei rei > $D/testmods-rei.txt 2>&1
   START=$(date +%s)
   tools/smoke.sh $D $D/testmods-rei > $D/smoke-rei.out 2>&1
+  rm -rf $D/shots-rei; cp -r $D/run/screenshots $D/shots-rei 2>/dev/null   # the screenshots of this run, for a look afterwards
   T=$(( $(date +%s) - START ))
   MODS=$(ls $D/testmods-rei | tr '\n' ' ')
   if grep -q "SMOKE OK" $D/smoke-rei.out; then R="OK"

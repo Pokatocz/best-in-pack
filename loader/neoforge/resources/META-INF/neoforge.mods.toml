@@ -54,3 +54,13 @@ type="optional"
 versionRange="*"
 ordering="NONE"
 side="CLIENT"
+
+[[dependencies.bestinpack]]
+modId="emi"
+type="optional"
+//#if MC < 1.20.5
+//$$mandatory=false
+//#endif
+versionRange="*"
+ordering="NONE"
+side="CLIENT"

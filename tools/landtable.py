@@ -1,10 +1,13 @@
 """Add Modrinth version ids (newest per game version + loader) to tools/data/<project>-table.json.
-Usage: landtable.py <game versions...>   – existing entries are kept."""
+Usage: landtable.py [--only project] <game versions...>   – existing entries are kept."""
 import json, os, sys, urllib.parse, urllib.request
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from targets import LAND
-PROJECTS = ["jei", "rei", "architectury-api", "modmenu"]
+PROJECTS = ["jei", "rei", "architectury-api", "modmenu", "emi"]
 LOADERS = ["fabric", "forge", "neoforge"]
+if len(sys.argv) > 2 and sys.argv[1] == "--only":
+    PROJECTS = [sys.argv[2]]
+    del sys.argv[1:3]
 
 def versions(project, mc, loader):
     q = "https://api.modrinth.com/v2/project/%s/version?game_versions=%s&loaders=%s" % (

@@ -6,7 +6,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * What Best in Pack needs from a recipe viewer. JEI and REI each implement it in their own class, which is only
+ * What Best in Pack needs from a recipe viewer. JEI, REI and EMI each implement it in their own class, which is only
  * loaded (by name) when that viewer is installed – and only built for game versions the viewer exists for.
  */
 public interface Viewer {

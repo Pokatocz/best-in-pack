@@ -12,7 +12,7 @@ export DISPLAY=:99 XDG_RUNTIME_DIR=/tmp/xdg LIBGL_ALWAYS_SOFTWARE=1 SDL_VIDEO_FO
 mkdir -p /tmp/xdg
 pgrep -x Xvfb >/dev/null || (Xvfb :99 -screen 0 1280x720x24 +extension GLX +render -noreset >/dev/null 2>&1 &)
 sleep 1
-rm -rf run/saves run/config/bestinpack run/screenshots
+rm -rf run/saves run/config/bestinpack run/screenshots run/emi.json run/config/emi.css
 # SMOKE_CONFIG='{"openKey": "N"}' starts the game with that bestinpack.json (like a modpack shipping one)
 # (and like a fresh install: no key binding of ours saved in options.txt yet)
 [ -n "$SMOKE_CONFIG" ] && mkdir -p run/config/bestinpack && printf '%s' "$SMOKE_CONFIG" > run/config/bestinpack/bestinpack.json \
@@ -30,4 +30,4 @@ grep -qE "net.minecraftforge.gradle' version '\[6|net.neoforged.gradle.userdev" 
 TASK=runClient
 timeout ${SMOKE_TIMEOUT:-1500} $G $TASK -Dbestinpack.selftest=true --console=plain > smoke.log 2>&1
 echo "exit $?"
-grep -E "SMOKE|Best in Pack indexed|Exception in|Mod loading has failed|LoadingFailed|Crash report|FATAL" smoke.log | grep -v "SMOKE: waiting" | sed -E 's/^\[[0-9:]+\] \[[^]]*\] (\[[^]]*\]: |\([^)]*\) )//' | cut -c1-300 | head -80
+grep -E "SMOKE|Best in Pack indexed|Exception in|Mod loading has failed|LoadingFailed|Crash report|FATAL" smoke.log | grep -v "SMOKE: waiting" | sed -E 's/^\[[0-9:]+\] \[[^]]*\] (\[[^]]*\]: |\([^)]*\) )//' | cut -c1-300 | head -250

@@ -56,7 +56,7 @@ public final class Config {
     /** Single items left out, by id, e.g. "minecraft:enchanted_golden_apple". */
     public List<String> hiddenItems = new ArrayList<>();
 
-    /** Items hidden in JEI/REI (edit mode, blacklist, pack filters) are left out here too. */
+    /** Items hidden in JEI/REI/EMI (edit mode, blacklist, pack filters) are left out here too. */
     public boolean respectJeiHiding = true;
 
     /** Only items listed in the creative inventory are ranked (like JEI) – debug items without a recipe stay out. */
@@ -65,7 +65,7 @@ public final class Config {
     /** Items the player has never had are shown as "???" rows (stats only, no name, icon or mod). */
     public boolean onlyDiscovered = false;
 
-    /** The open key also works inside inventories and JEI/REI (jumps to the hovered item). */
+    /** The open key also works inside inventories and JEI/REI/EMI (jumps to the hovered item). */
     public boolean openKeyInMenus = true;
 
     /**
@@ -333,11 +333,11 @@ public final class Config {
             --------
 
                 B                    open / close the screen
-                B over an item       jump to that item (inventory, chest, JEI, REI)
-                R / U over a row     recipe / uses (the JEI or REI keys)
+                B over an item       jump to that item (inventory, chest, JEI, REI, EMI)
+                R / U over a row     recipe / uses (the JEI, REI or EMI keys)
                 Shift over an item   tooltip shows "Best in Pack: #3 of 54 chestplates"
                 Click a column       sort, click again to reverse
-                Click a row          show its recipe (needs JEI or REI)
+                Click a row          show its recipe (needs JEI, REI or EMI)
                 Right-click a row    show what it is used for
                 Search box           type a name, @mod to show one mod, -word to hide
                 Have                 only items in your inventory
@@ -373,7 +373,7 @@ public final class Config {
                 hiddenMods          mods to hide, e.g. ["modid"]                     default []
                 hiddenItems         items to hide, e.g. ["minecraft:apple"]          default []
                                     (press F3+H in game to see item ids)
-                respectJeiHiding    true = items hidden in JEI/REI are hidden here too  default true
+                respectJeiHiding    true = items hidden in JEI/REI/EMI are hidden here too  default true
                 onlyCreativeItems   true = only items in the creative inventory      default true
                                     (false also ranks debug items without a recipe)
                 onlyDiscovered      true = items you never had show as ???           default false
@@ -383,7 +383,7 @@ public final class Config {
                                     e.g. "key.keyboard.n" or just "N", "none" = no key
                                     (for modpacks: only new installs and "Reset" in Controls
                                     use it – players change their key in Controls)
-                openKeyInMenus      true = B also works in inventories and JEI/REI   default true
+                openKeyInMenus      true = B also works in inventories and JEI/REI/EMI   default true
                 inventoryButton     true = BiP button above the inventory            default true
                 inventoryButtonX    move the button left/right, + = right            default 0
                 inventoryButtonY    move the button up/down, + = down                default 0

@@ -73,11 +73,15 @@ def generate(loader, era_name):
     rei = pick("rei", mc, loader, versions)
     arch = pick("architectury-api", mc, loader, versions)
     if not (rei and arch): rei = arch = None
+    # EMI exists for 1.20 - 1.21.1 only (Fabric, Forge up to 1.20.2, NeoForge from 1.20.4)
+    emi = pick("emi", mc, loader, versions)
     if not jei: os.remove(os.path.join(src_java, "com/bestinpack/compat/JeiBridge.java"))
     if not rei: os.remove(os.path.join(src_java, "com/bestinpack/compat/ReiBridge.java"))
+    if not emi: os.remove(os.path.join(src_java, "com/bestinpack/compat/EmiBridge.java"))
     deps = []
     if jei_dep: deps.append(jei_dep)
     if rei: deps += ['compileOnly "maven.modrinth:rei:%s"' % rei, 'compileOnly "maven.modrinth:architectury-api:%s"' % arch]
+    if emi: deps.append('compileOnly "maven.modrinth:emi:%s"' % emi)
 
     subst = {"${version}": MOD_VERSION, "${mc_range}": mc_range_forge(versions)}
     if loader == "neoforge":
@@ -104,7 +108,7 @@ def generate(loader, era_name):
             "mixins": ["bestinpack.mixins.json"],
             "depends": {"fabricloader": ">=0.16.0", "minecraft": mc_range_fabric(versions), "java": ">=%d" % java,
                         "fabric-api": "*"},
-            "suggests": {"jei": "*", "roughlyenoughitems": "*"},
+            "suggests": {"jei": "*", "roughlyenoughitems": "*", "emi": "*"},
         }
         if jei: fmj["entrypoints"]["jei_mod_plugin"] = ["com.bestinpack.compat.JeiBridge"]
         json.dump(fmj, open(os.path.join(src_res, "fabric.mod.json"), "w"), indent=2)

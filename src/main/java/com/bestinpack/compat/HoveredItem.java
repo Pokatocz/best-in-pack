@@ -7,7 +7,7 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
-/** What the mouse is over on the current screen: a slot, or an ingredient in JEI/REI. */
+/** What the mouse is over on the current screen: a slot, or an ingredient in JEI/REI/EMI. */
 public final class HoveredItem {
     private HoveredItem() {}
 

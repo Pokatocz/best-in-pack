@@ -16,11 +16,15 @@ public final class RecipeViewers {
     private static Viewer viewer;
     private static boolean resolved;
 
-    /** The installed viewer (JEI preferred), or null. */
+    /**
+     * The installed viewer, or null. EMI comes first: when EMI is installed next to JEI it takes over JEI's screens
+     * (JEI then only supplies its recipes to EMI and has no window of its own to open). Then JEI, then REI.
+     */
     public static Viewer get() {
         if (!resolved) {
             resolved = true;
-            viewer = load("jei", "com.bestinpack.compat.JeiBridge");
+            viewer = load("emi", "com.bestinpack.compat.EmiBridge");
+            if (viewer == null) viewer = load("jei", "com.bestinpack.compat.JeiBridge");
             if (viewer == null) viewer = load("roughlyenoughitems", "com.bestinpack.compat.ReiBridge");
         }
         return viewer;

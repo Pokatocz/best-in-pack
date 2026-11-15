@@ -1,5 +1,5 @@
 """Download the runtime JEI jar for a loader + game version into a folder (for the smoke test).
-Usage: testmods.py <loader> <mc> <dir>"""
+Usage: testmods.py <loader> <mc> <dir> [rei|emi|emi+jei]   – REI (with its libraries) or EMI instead of JEI, or EMI next to JEI"""
 import json, os, sys, urllib.request
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from targets import modrinth_id
@@ -21,6 +21,24 @@ if len(sys.argv) > 4 and sys.argv[4] == "rei":
             o.write(r.read())
         print(proj, f[0]["filename"])
     sys.exit(0)
+if len(sys.argv) > 4 and sys.argv[4] in ("emi", "emi+jei"):
+    # EMI (it needs no library mods): the release this build was compiled against, else the newest for this version
+    import urllib.parse
+    evid = modrinth_id("emi", mc, loader)
+    if evid:
+        v = json.load(urllib.request.urlopen(urllib.request.Request("https://api.modrinth.com/v2/version/" + evid, headers={"User-Agent": "bestinpack-test"})))
+    else:
+        q = "https://api.modrinth.com/v2/project/emi/version?game_versions=%s&loaders=%s" % (
+            urllib.parse.quote('["%s"]' % mc), urllib.parse.quote('["%s"]' % loader))
+        vs = json.load(urllib.request.urlopen(urllib.request.Request(q, headers={"User-Agent": "bestinpack-test"})))
+        if not vs:
+            print("no EMI for", loader, mc); sys.exit(0)
+        v = vs[0]
+    f = [x for x in v["files"] if x.get("primary")] or v["files"]
+    with urllib.request.urlopen(f[0]["url"]) as r, open(os.path.join(out, f[0]["filename"]), "wb") as o:
+        o.write(r.read())
+    print("EMI", f[0]["filename"])
+    if sys.argv[4] == "emi": sys.exit(0)
 vid = modrinth_id("jei", mc, loader)
 if not vid and loader == "fabric":
     from targets import JEI_FABRIC_MAVEN

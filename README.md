@@ -24,8 +24,8 @@ better. Best in Pack reads the real stats of every item in your game and puts th
 - **Details** shows every stat, including special bonuses like flight or damage immunity.
 - **Have** shows only the items in your inventory – items you have are green in every list.
 - **Shift tooltip rank** – hold Shift over any item: *Best in Pack: #2 of 14 weapons (by DPS)*.
-- **Jump to an item** – hover an item in your inventory, JEI or REI and press B to open its row.
-- **JEI and REI** – click a row to see how to craft it.
+- **Jump to an item** – hover an item in your inventory, JEI, REI or EMI and press B to open its row.
+- **JEI, REI and EMI** – click a row to see how to craft it, right-click to see what it is used for.
 - **Client-only** – works on any server, nothing to install there.
 - **Fabric, Forge and NeoForge**, every Minecraft version from **1.20 to 26.3**.
 
@@ -60,7 +60,7 @@ better. Best in Pack reads the real stats of every item in your game and puts th
 ¹ Forge was never released for 1.21.2, so this file covers 1.21.3 and 1.21.4.
 ² NeoForge for 1.20.1 is a fork of Forge 47 and runs the Forge file.
 ³ Forge was never released for 1.20.5, so this file covers 1.20.6.
-Fabric needs Fabric API. JEI and REI are optional.
+Fabric needs Fabric API. JEI, REI and EMI are optional.
 
 ## Settings and modpacks
 
@@ -69,7 +69,7 @@ Everything lives in `config/bestinpack/` – `bestinpack.json` is explained in t
 - **Different default key for your modpack:** `"openKey": "N"` (also `"F6"`, `"left alt"`, `"none"`). It is used
   by new installs and by "Reset" in Controls; players can still change their key in Minecraft's Controls.
 - `welcomeMessage` / `keyConflictWarning` switch off the two chat messages.
-- `hiddenMods` / `hiddenItems` leave things out of the rankings; items hidden in JEI/REI are left out too.
+- `hiddenMods` / `hiddenItems` leave things out of the rankings; items hidden in JEI, REI or EMI are left out too.
 - Only items that are in the creative inventory are ranked (like JEI); `onlyCreativeItems: false` ranks everything.
 
 ## Bugs and ideas
@@ -99,17 +99,27 @@ out of the release JARs.
 ## How a release is tested
 
 - Every reference the JARs make to Minecraft and the loader is resolved against each game version they cover
-  (`tools/verify.py`, 68 loader/version combinations).
+  (`tools/verifyall.sh`, 68 loader/version combinations).
 - Every build runs the automatic in-game test on the newest version of its range (`tools/smokeall.sh`, 38 builds):
   chat messages, the key, every tab, search, sorting, Details, B over an inventory item, the tooltip rank.
-- The click on a row that opens the recipe is tested with JEI in the 28 builds for which the test found a JEI
-  release for that loader and game version; the other 10 run without a recipe viewer. REI is tested in separate
-  runs on Fabric 1.20.1, 1.21.11 and 26.3 and NeoForge 1.20.4, 1.21.1 and 26.3 (`tools/smokerei.sh`).
+- The click on a row that opens the recipe is tested with each recipe viewer:
+  - **JEI** in the 28 builds for which a JEI release exists for that loader and game version (the other 10 run
+    without a recipe viewer). Forge 1.20 – 1.20.4 cannot load JEI in a development run, so those three are tested
+    in a real install (`tools/prodself.sh`).
+  - **EMI** in all ten builds that carry the EMI bridge (`tools/smokeemi.sh`; Forge 1.20.1 and 1.20.2 in a real
+    install), next to JEI on Fabric 1.20.1 and NeoForge 1.21.1, and with the oldest EMI of a range in real
+    installs: EMI 1.0.3 on Fabric and Forge 1.20, EMI 1.1.12 on Fabric and NeoForge 1.21, and the Forge file on
+    NeoForge 1.20.1.
+  - **REI** in separate runs on Fabric 1.20.1, 1.21.11 and 26.3 and NeoForge 1.20.4, 1.21.1 and 26.3
+    (`tools/smokerei.sh`).
 - Every release JAR is started in a real Fabric, Forge or NeoForge install of every game version it covers
   (`tools/prodall.sh`, 69 combinations, including the Forge 1.20–1.20.1 JAR on NeoForge 1.20.1).
-- Fabric up to 1.21.11 and Forge up to 1.20.4 run remapped JARs: for 0.9.4 the whole in-game test also ran in a
-  real install of Fabric 1.20.1 and 1.21.11 and Forge 1.20.1 and 1.20.4 (`gradle build -PwithSelfTest`).
+- Fabric up to 1.21.11 and Forge up to 1.20.4 run remapped JARs: for 0.9.5 the whole in-game test also ran in real
+  installs of Fabric 1.20, 1.21 and 1.21.11 and Forge 1.20, 1.20.1, 1.20.2 and 1.20.4 (`tools/prodself.sh`).
 - `tools/jarcheck.py` checks version, Java level and that no test code is in any release JAR.
+
+Known: JEI for Forge 1.20.2 only starts when the first inventory screen opens (its own log says so). Until then a
+click on a row answers "The recipe viewer is still loading"; after that it opens the recipe as everywhere else.
 
 ## License
 

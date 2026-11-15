@@ -63,6 +63,7 @@ public final class SmokeTest {
                 case 4 -> finish(client);
                 case 5 -> survival(client);
                 case 6 -> emiSearch(client);
+                case 7 -> emiPanel(client);
                 default -> {}
             }
         } catch (Throwable t) {
@@ -187,10 +188,21 @@ public final class SmokeTest {
         if (cat == cats.length + 2) {
             Screen now = Screens.current();
             log("screen after row click = " + (now == null ? "none" : now.getClass().getName()));
+            if ("EMI".equals(RecipeViewers.available())) {
+                check(now != null && now.getClass().getName().startsWith("dev.emi.emi.screen."), "the row click opened EMI's recipe screen");
+                check(RecipeViewers.isRecipeKey(InputConstants.KEY_R, 0) && RecipeViewers.isUsesKey(InputConstants.KEY_U, 0)
+                        && !RecipeViewers.isRecipeKey(InputConstants.KEY_U, 0), "EMI's recipe and uses keys (R, U) are recognised");
+            }
             shot(client, "smoke_viewer");
             Screens.set(null);
             phase = 6;
             ticks = 0;
+            return;
+        }
+        if (lateStart == 1) {   // the inventory has been open for 30 ticks: back to the rankings, then click the row again
+            log("after the first inventory screen: " + RecipeViewers.available() + " started = " + RecipeViewers.hidingReady());
+            Screens.set(new BestInPackScreen(null));
+            lateStart = 2;
             return;
         }
         if (!(Screens.current() instanceof BestInPackScreen screen)) {
@@ -244,11 +256,24 @@ public final class SmokeTest {
                 screen.selectCategoryForTest(Category.WEAPONS);
                 screen.resetSortForTest();
                 boolean opened = screen.openRecipesForTest();
-                check(opened, "row click opens " + viewer);
+                if (!opened && !RecipeViewers.hidingReady() && lateStart == 0) {
+                    // The viewer has not started although the world was joined long ago. JEI for Forge 1.20.2 does
+                    // that: it misses the tags of the new configuration phase and only starts when the first
+                    // inventory screen opens (its log says so). Until then a row click can only say "still loading".
+                    // Open the inventory once, the way a player would, and click the row again.
+                    log(viewer + " has not started yet - opening the inventory once, which is when it starts late");
+                    Screens.set(new InventoryScreen(client.player));
+                    lateStart = 1;
+                    return;
+                }
+                check(opened, "row click opens " + viewer + (lateStart == 2 ? " (after its late start with the first inventory screen)" : ""));
             }
             cat++;
         }
     }
+
+    /** 0: the viewer started normally; 1: it had not, the inventory is open to start it; 2: back in the rankings. */
+    private static int lateStart;
 
     private static void inventory(Minecraft client) {
         if (ticks == 1) {
@@ -273,7 +298,10 @@ public final class SmokeTest {
             net.minecraft.world.inventory.Slot hs = Screens.current() instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> acs
                     ? com.bestinpack.platform.Platform.get().hoveredSlot(acs) : null;
             boolean ready = hs != null && hs.getItem().getItem() == Items.DIAMOND_CHESTPLATE;
-            if (ready || ticks >= 100) {
+            if (ready && !shiftLook(client, "smoke_shift")) {
+                // the tooltip with Shift held is being photographed
+            } else if (ready || ticks >= 100) {
+                releaseShift();
                 log("hovered slot after " + ticks + " ticks: " + (hs == null ? "none" : "index " + hs.index + " item " + hs.getItem().getItem()));
                 shot(client, "smoke_inventory");
                 keyTick = ticks;
@@ -396,11 +424,187 @@ public final class SmokeTest {
         }
         if (ticks == 50) {
             Screens.set(null);
+            if (com.bestinpack.platform.Platform.get().isModLoaded("emi")) {
+                // stay in survival: its inventory leaves room for EMI's item panel
+                phase = 7;
+                ticks = 0;
+                return;
+            }
             if (server != null) {
                 server.execute(() -> server.getPlayerList().getPlayers().forEach(p -> p.setGameMode(net.minecraft.world.level.GameType.CREATIVE)));
             }
             phase = 4;
             ticks = 0;
+        }
+    }
+
+    // ------------------------------------------------------------------ EMI (by name: this class is also compiled
+    // into builds for game versions EMI does not exist for)
+
+    private static Object emiStackOf(ItemStack stack) throws ReflectiveOperationException {
+        return Class.forName("dev.emi.emi.api.stack.EmiStack").getMethod("of", ItemStack.class).invoke(null, stack);
+    }
+
+    /** The item EMI's panels show at this GUI position, or null. */
+    private static net.minecraft.world.item.Item emiItemAt(int x, int y) throws ReflectiveOperationException {
+        Object hit = Class.forName("dev.emi.emi.api.EmiApi").getMethod("getHoveredStack", int.class, int.class, boolean.class).invoke(null, x, y, false);
+        Object ingredient = Class.forName("dev.emi.emi.api.stack.EmiStackInteraction").getMethod("getStack").invoke(hit);
+        List<?> stacks = (List<?>) Class.forName("dev.emi.emi.api.stack.EmiIngredient").getMethod("getEmiStacks").invoke(ingredient);
+        for (Object st : stacks) {
+            ItemStack item = (ItemStack) Class.forName("dev.emi.emi.api.stack.EmiStack").getMethod("getItemStack").invoke(st);
+            if (item != null && !item.isEmpty()) return item.getItem();
+        }
+        return null;
+    }
+
+    /** Centre (GUI pixels) of the cell in EMI's panels that shows the item, or null. */
+    private static int[] findInEmi(Minecraft client, net.minecraft.world.item.Item item) throws ReflectiveOperationException {
+        int w = client.getWindow().getGuiScaledWidth(), h = client.getWindow().getGuiScaledHeight();
+        for (int y = 2; y < h; y += 5) {
+            for (int x = 2; x < w; x += 5) {
+                if (emiItemAt(x, y) != item) continue;
+                int x0 = x, x1 = x, y0 = y, y1 = y;
+                while (x0 > 0 && emiItemAt(x0 - 1, y) == item) x0--;
+                while (x1 < w - 1 && emiItemAt(x1 + 1, y) == item) x1++;
+                while (y0 > 0 && emiItemAt(x, y0 - 1) == item) y0--;
+                while (y1 < h - 1 && emiItemAt(x, y1 + 1) == item) y1++;
+                return new int[]{(x0 + x1) / 2, (y0 + y1) / 2};
+            }
+        }
+        return null;
+    }
+
+    private static void emiSetHidden(ItemStack stack, boolean hidden) throws ReflectiveOperationException {
+        Class.forName("dev.emi.emi.runtime.EmiHidden")
+                .getMethod("setVisibility", Class.forName("dev.emi.emi.api.stack.EmiIngredient"), boolean.class, boolean.class)
+                .invoke(null, emiStackOf(stack), hidden, false);
+    }
+
+    private static int[] emiAt;
+    private static int emiFound = -1, emiPressed = -1;
+
+    /**
+     * EMI's item panel next to the survival inventory: the open key over a stack there jumps to that item's row,
+     * and what the player hides in EMI disappears from the rankings (and comes back).
+     */
+    private static void emiPanel(Minecraft client) {
+        ItemStack sword = new ItemStack(Items.DIAMOND_SWORD);
+        try {
+            if (ticks == 1) {
+                Screens.set(new InventoryScreen(client.player));
+                Class.forName("dev.emi.emi.api.EmiApi").getMethod("setSearchText", String.class).invoke(null, "diamond sword");
+            }
+            // EMI searches on its own thread and lays its panel out while drawing: look for the sword for up to 15 s.
+            if (ticks >= 20 && emiAt == null && ticks % 10 == 0) {
+                emiAt = findInEmi(client, Items.DIAMOND_SWORD);
+                if (emiAt != null) {
+                    log("EMI shows the Diamond Sword at " + emiAt[0] + "," + emiAt[1] + " after " + ticks + " ticks");
+                    hover(client, emiAt[0], emiAt[1]);
+                    emiFound = ticks;
+                } else if (ticks >= 300) {
+                    check(false, "Diamond Sword found in EMI's item panel");
+                    emiFound = emiPressed = -2;
+                }
+            }
+            if (emiFound > 0 && ticks == emiFound + 10) fixHover(client);
+            if (emiFound > 0 && emiPressed < 0 && ticks >= emiFound + 20) {
+                // slow software rendering: wait (up to 5 s) until EMI itself reports the sword under the real pointer
+                Screen inv = Screens.current();
+                ItemStack hovered = inv == null ? ItemStack.EMPTY : com.bestinpack.compat.HoveredItem.get(inv);
+                boolean ready = hovered.getItem() == Items.DIAMOND_SWORD;
+                if (ready && !shiftLook(client, "smoke_emi_shift")) {
+                    // the tooltip with Shift held is being photographed
+                } else if (ready || ticks >= emiFound + 120) {
+                    releaseShift();
+                    log("hovered in EMI after " + (ticks - emiFound) + " ticks: " + hovered.getItem());
+                    check(ready, "EMI reports the stack under the mouse (Diamond Sword)");
+                    shot(client, "smoke_emi_panel");
+                    int key = BestInPackClient.openKey == null ? InputConstants.KEY_B : Keys.code(BestInPackClient.openKey.saveString());
+                    boolean used = inv != null && BestInPackClient.onScreenKey(inv, key, 0);
+                    Screen now = Screens.current();
+                    log("open key over EMI's panel used=" + used + " -> " + (now == null ? "none" : now.getClass().getSimpleName()));
+                    check(now instanceof BestInPackScreen, "open key works over EMI's item panel");
+                    if (now instanceof BestInPackScreen sc) {
+                        List<String> rows = sc.firstNamesForTest(60);
+                        check(rows.stream().anyMatch(r -> r.startsWith("Diamond Sword")), "jumped to the item hovered in EMI (Diamond Sword)");
+                    }
+                    emiPressed = ticks;
+                }
+            }
+            if (emiPressed > 0 && ticks == emiPressed + 20) {
+                shot(client, "smoke_emi_jump");
+                check(RecipeViewers.hidingReady() && !RecipeViewers.isHidden(sword), "EMI lists the Diamond Sword (not hidden)");
+                check(!ItemIndex.ranksFor(Items.DIAMOND_SWORD).isEmpty(), "Diamond Sword is ranked with EMI installed");
+                emiSetHidden(sword, true);
+            }
+            if (emiPressed > 0 && ticks == emiPressed + 40) {
+                ItemIndex.ensureBuilt(client.level, client.player);
+                check(RecipeViewers.isHidden(sword), "a stack hidden in EMI counts as hidden");
+                check(ItemIndex.ranksFor(Items.DIAMOND_SWORD).isEmpty(), "a stack hidden in EMI leaves the rankings");
+                emiSetHidden(sword, false);
+            }
+            if (emiPressed > 0 && ticks == emiPressed + 60) {
+                ItemIndex.ensureBuilt(client.level, client.player);
+                check(!RecipeViewers.isHidden(sword) && !ItemIndex.ranksFor(Items.DIAMOND_SWORD).isEmpty(), "shown again in EMI, it is ranked again");
+            }
+        } catch (Throwable t) {
+            log("EMI panel test failed: " + t);
+            check(false, "EMI panel test ran (" + t + ")");
+            emiFound = emiPressed = -2;
+        }
+        if (emiPressed == -2 || (emiPressed > 0 && ticks >= emiPressed + 70)) {
+            try {
+                Class.forName("dev.emi.emi.api.EmiApi").getMethod("setSearchText", String.class).invoke(null, "");
+            } catch (Throwable ignored) {}
+            Screens.set(null);
+            var server = client.getSingleplayerServer();
+            if (server != null) {
+                server.execute(() -> server.getPlayerList().getPlayers().forEach(p -> p.setGameMode(net.minecraft.world.level.GameType.CREATIVE)));
+            }
+            phase = 4;
+            ticks = 0;
+        }
+    }
+
+    private static int shiftAt = -1;
+    private static boolean shiftShot;
+    private static final java.util.Set<String> SHIFT_LOOKED = new java.util.HashSet<>();
+
+    /**
+     * For the eye, not a check: holds Shift for a moment over whatever the mouse is on and takes a screenshot, so the
+     * rank line of the real, drawn tooltip can be looked at. Call every tick; true once the screenshot is taken and
+     * Shift is up again.
+     */
+    private static boolean shiftLook(Minecraft client, String name) {
+        if (SHIFT_LOOKED.contains(name)) return true;
+        if (shiftAt < 0) {
+            xraw("keydown", "Shift_L");
+            shiftAt = ticks;
+            shiftShot = false;
+        } else if (!shiftShot && ticks >= shiftAt + 14) {
+            shot(client, name);
+            shiftShot = true;
+        } else if (shiftShot && ticks >= shiftAt + 18) {
+            releaseShift();
+            SHIFT_LOOKED.add(name);
+        }
+        return false;
+    }
+
+    private static void releaseShift() {
+        if (shiftAt < 0) return;
+        xraw("keyup", "Shift_L");
+        shiftAt = -1;
+    }
+
+    /** A key event without moving the pointer first (it has to stay on the hovered item). */
+    private static void xraw(String... args) {
+        try {
+            List<String> cmd = new ArrayList<>(List.of("xdotool"));
+            cmd.addAll(List.of(args));
+            new ProcessBuilder(cmd).inheritIO().start().waitFor();
+        } catch (Exception e) {
+            log("xdotool failed: " + e);
         }
     }
 
