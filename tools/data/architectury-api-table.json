@@ -1,4 +1,36 @@
 {
+ "1.18": {
+  "fabric": "468H7PSo|3.9.66+fabric",
+  "forge": "xUSAkGXZ|3.9.66+forge"
+ },
+ "1.18.1": {
+  "fabric": "468H7PSo|3.9.66+fabric",
+  "forge": "xUSAkGXZ|3.9.66+forge"
+ },
+ "1.18.2": {
+  "fabric": "ql0OowZw|4.12.94+fabric",
+  "forge": "3ChyUkZQ|4.12.94+forge"
+ },
+ "1.19": {
+  "fabric": "cysqWrDN|5.14.84+fabric",
+  "forge": "NxbWyaxs|5.14.84+forge"
+ },
+ "1.19.1": {
+  "fabric": "MGP3b9Aq|6.3.56+fabric",
+  "forge": "d5oFBHkM|6.3.56+forge"
+ },
+ "1.19.2": {
+  "fabric": "cde9Su0w|6.6.92+fabric",
+  "forge": "96L7fC9l|6.6.92+forge"
+ },
+ "1.19.3": {
+  "fabric": "OFLHUcGo|7.1.86+fabric",
+  "forge": "lReYANwU|7.1.86+forge"
+ },
+ "1.19.4": {
+  "fabric": "ibPc02al|8.2.91+fabric",
+  "forge": "RDKM6Ne0|8.2.91+forge"
+ },
  "1.20": {
   "fabric": "WbL7MStR|9.2.14+fabric",
   "forge": "1MKTLiiG|9.2.14+forge"

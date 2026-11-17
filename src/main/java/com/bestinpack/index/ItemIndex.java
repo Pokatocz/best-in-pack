@@ -9,10 +9,14 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
+//#if MC >= 1.19
 import net.minecraft.network.chat.contents.TranslatableContents;
+//#endif
 import net.minecraft.core.registries.Registries;
 import net.minecraft.tags.BlockTags;
+//#if MC >= 1.18.2
 import net.minecraft.tags.TagKey;
+//#endif
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -24,7 +28,9 @@ import net.minecraft.world.food.FoodProperties;
 //#if MC < 1.21.2
 import net.minecraft.world.item.ChorusFruitItem;
 import net.minecraft.world.item.ElytraItem;
+//#if MC >= 1.19.4
 import net.minecraft.world.item.Equipable;
+//#endif
 import net.minecraft.world.item.HoneyBottleItem;
 //#endif
 import net.minecraft.world.item.Item;
@@ -89,9 +95,11 @@ public final class ItemIndex {
 
     private ItemIndex() {}
 
+    //#if MC >= 1.18.2
     /** The common "c:hidden_from_recipe_viewers" tag that all three loaders use for creative-only/technical items. */
     private static final TagKey<Item> HIDDEN_FROM_VIEWERS = TagKey.create(Registries.ITEM,
             com.bestinpack.util.Ids.of("c", "hidden_from_recipe_viewers"));
+    //#endif
 
     public static void markDirty() {
         dirty = true;
@@ -181,8 +189,10 @@ public final class ItemIndex {
 
         for (Item item : BuiltInRegistries.ITEM) {
             if (item == Items.AIR) continue;
+            //#if MC >= 1.19.3
             // Items behind a disabled experiment do not exist in this world.
             if (world != null && !item.isEnabled(world.enabledFeatures())) continue;
+            //#endif
             ItemStack stack;
             try {
                 stack = item.getDefaultInstance();
@@ -190,7 +200,9 @@ public final class ItemIndex {
                 continue;
             }
             if (stack == null || stack.isEmpty()) continue;
+            //#if MC >= 1.18.2
             if (stack.is(HIDDEN_FROM_VIEWERS)) continue;
+            //#endif
             if (creative != null && !creative.contains(item)) { notInCreative++; continue; }
 
             var key = BuiltInRegistries.ITEM.getKey(item);
@@ -453,16 +465,23 @@ public final class ItemIndex {
             //#if MC >= 1.21.2
             //$$ net.minecraft.world.item.equipment.Equippable equippable = stack.get(DataComponents.EQUIPPABLE);
             //$$ if (equippable != null) slot = equippable.slot();
-            //#else
+            //#elif MC >= 1.19.4
             Equipable equipable = Equipable.get(stack);
             if (equipable != null) slot = equipable.getEquipmentSlot();
+            //#else
+            //$$ // Before 1.19.4 (no Equipable): the game's own answer – armor, elytra, heads and pumpkins, shields.
+            //$$ try {
+            //$$     slot = net.minecraft.world.entity.Mob.getEquipmentSlotForItem(stack);
+            //$$ } catch (Throwable ignored) {}
             //#endif
         }
+        //#if MC >= 1.19.4
         if (slot == null && player != null) {
             try {
                 slot = player.getEquipmentSlotForItem(stack);
             } catch (Throwable ignored) {}
         }
+        //#endif
         return slot;
     }
 
@@ -936,7 +955,11 @@ public final class ItemIndex {
     }
     //#else
     //$$ private static Holder<Attribute> attr(Attribute attribute) {
+    //#if MC >= 1.19.3
     //$$     return BuiltInRegistries.ATTRIBUTE.wrapAsHolder(attribute);
+    //#else
+    //$$     return new Holder<>(attribute, net.minecraft.core.Registry.ATTRIBUTE.getResourceKey(attribute));
+    //#endif
     //$$ }
     //$$
     //$$ private static net.minecraft.world.effect.MobEffect effectOf(MobEffectInstance inst) {
@@ -1049,7 +1072,11 @@ public final class ItemIndex {
     }
 
     private static boolean hasSkippedKey(Component text) {
+        //#if MC >= 1.19
         if (text.getContents() instanceof TranslatableContents t) {
+        //#else
+        //$$ if (text instanceof net.minecraft.network.chat.TranslatableComponent t) {
+        //#endif
             String key = t.getKey();
             for (String p : SKIP_KEY_PREFIXES) if (key.startsWith(p)) return true;
         }

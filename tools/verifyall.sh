@@ -1,5 +1,5 @@
 #!/bin/bash
-# Usage: verifyall.sh [loader...]   (default: fabric forge neoforge)
+# Usage: verifyall.sh [loader...]   (default: fabric forge neoforge; ERAS="1.18.2 1.19.4" limits the eras)
 # tools/verify.py for every build: resolves every reference the built classes make to Minecraft and the loader
 # against each game version of the range. verify.py needs Mojang names, so it gets the JAR before remapping where
 # the release JAR is remapped: Fabric up to 1.21.11 (build/devlibs) and Forge 1.20 - 1.20.4 (build/classes).
@@ -9,7 +9,7 @@ VERSION=$(cat VERSION)
 LOADERS="$@"; [ -z "$LOADERS" ] && LOADERS="fabric forge neoforge"
 TMP=$(mktemp -d)
 for L in $LOADERS; do
-  for E in $(python3 -c "import sys; sys.path.insert(0,'tools'); from targets import ERAS, loaders_for; print(' '.join(e[0] for e in ERAS if '$L' in loaders_for(e[0])))"); do
+  for E in ${ERAS:-$(python3 -c "import sys; sys.path.insert(0,'tools'); from targets import ERAS, loaders_for; print(' '.join(e[0] for e in ERAS if '$L' in loaders_for(e[0])))")}; do
     D=builds/$L-$E
     JAR=$D/build/libs/BestInPack-$L-$VERSION.jar
     [ -f $D/build/devlibs/BestInPack-$L-$VERSION-dev.jar ] && JAR=$D/build/devlibs/BestInPack-$L-$VERSION-dev.jar

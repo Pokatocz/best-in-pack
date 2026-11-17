@@ -27,7 +27,7 @@ better. Best in Pack reads the real stats of every item in your game and puts th
 - **Jump to an item** – hover an item in your inventory, JEI, REI or EMI and press B to open its row.
 - **JEI, REI and EMI** – click a row to see how to craft it, right-click to see what it is used for.
 - **Client-only** – works on any server, nothing to install there.
-- **Fabric, Forge and NeoForge**, every Minecraft version from **1.20 to 26.3**.
+- **Fabric, Forge and NeoForge**, every Minecraft version from **1.18 to 26.3**.
 
 ## Screenshots
 
@@ -43,6 +43,11 @@ better. Best in Pack reads the real stats of every item in your game and puts th
 
 | Minecraft | Fabric | Forge | NeoForge |
 |---|---|---|---|
+| 1.18, 1.18.1 | `fabric-1.18-1.18.1` | `forge-1.18-1.18.1` | – ⁴ |
+| 1.18.2 | `fabric-1.18.2` | `forge-1.18.2` ⁵ | – |
+| 1.19 – 1.19.2 | `fabric-1.19-1.19.2` | `forge-1.19-1.19.2` ⁵ | – |
+| 1.19.3 | `fabric-1.19.3` | `forge-1.19.3` | – |
+| 1.19.4 | `fabric-1.19.4` | `forge-1.19.4` | – |
 | 1.20, 1.20.1 | `fabric-1.20-1.20.1` | `forge-1.20-1.20.1` | `forge-1.20-1.20.1` ² |
 | 1.20.2 | `fabric-1.20.2` | `forge-1.20.2` | `neoforge-1.20.2` |
 | 1.20.3, 1.20.4 | `fabric-1.20.3-1.20.4` | `forge-1.20.3-1.20.4` | `neoforge-1.20.3-1.20.4` |
@@ -60,7 +65,10 @@ better. Best in Pack reads the real stats of every item in your game and puts th
 ¹ Forge was never released for 1.21.2, so this file covers 1.21.3 and 1.21.4.
 ² NeoForge for 1.20.1 is a fork of Forge 47 and runs the Forge file.
 ³ Forge was never released for 1.20.5, so this file covers 1.20.6.
-Fabric needs Fabric API. JEI, REI and EMI are optional.
+⁴ NeoForge did not exist before 1.20.1.
+⁵ Needs Forge 40.0.47 or newer on 1.18.2 and Forge 41.0.94 or newer on 1.19 (any Forge on the other versions).
+Fabric needs Fabric API. JEI, REI and EMI are optional. Before 1.20 not every viewer exists everywhere: Fabric 1.18
+and 1.18.1 only have REI, and EMI starts with 1.18.2 on Fabric and 1.19.2 on Forge.
 
 ## Settings and modpacks
 
@@ -90,8 +98,8 @@ cd builds/neoforge-1.21-1.21.1 && gradle build
 tools/buildall.sh neoforge
 ```
 
-Requirements: Python 3, JDK 21 (plus JDK 17 for 1.20–1.20.4 and JDK 25 for 26.x), Gradle 9.5+ (Fabric: Gradle 9.8+
-running on JDK 25; Forge 1.20–1.20.4 and NeoForge 1.20.2: Gradle 8.14, set as `GRADLE8`).
+Requirements: Python 3, JDK 21 (plus JDK 17 for 1.18–1.20.4 and JDK 25 for 26.x), Gradle 9.5+ (Fabric: Gradle 9.8+
+running on JDK 25; Forge 1.18–1.20.4 and NeoForge 1.20.2: Gradle 8.14, set as `GRADLE8`).
 `tools/smoke.sh` runs the automatic in-game test used before every release, `tools/jarcheck.py` checks the finished
 JARs and `tools/prodcheck.sh` starts one in a real Fabric, Forge or NeoForge install. The self-test class is left
 out of the release JARs.
@@ -117,6 +125,28 @@ out of the release JARs.
 - Fabric up to 1.21.11 and Forge up to 1.20.4 run remapped JARs: for 0.9.5 the whole in-game test also ran in real
   installs of Fabric 1.20, 1.21 and 1.21.11 and Forge 1.20, 1.20.1, 1.20.2 and 1.20.4 (`tools/prodself.sh`).
 - `tools/jarcheck.py` checks version, Java level and that no test code is in any release JAR.
+
+The ten files for **1.18 – 1.19.4** (added to 0.9.5 later, the 38 files above were not rebuilt) went through the same
+steps, and more of them in real installs, because recipe viewers changed a lot in those years:
+
+- References resolved for all 16 loader/version combinations, and against Forge's whole build list to find the
+  oldest Forge with everything (`tools/forgemin.py`).
+- The automatic in-game test in a development run for all ten builds.
+- The whole in-game test in **55 real installs** (`tools/prodself.sh`): every game version on both loaders with
+  every recipe viewer that exists for it –
+  - **JEI** in 20 runs: 9.0, 9.1, 9.4, 9.5, 9.7, 10.2, 11.0, 11.1, 11.2, 11.68, 12.4 and 13.1 (the bridge for
+    these versions finds JEI's functions by name; its lookups were also checked against 139 JEI releases),
+  - **REI** 7, 8, 9, 10 and 11 in 11 runs, **EMI** 0.4.3, 0.7.3, 1.1.22 and 1.1.24 in 11 runs (two of them next
+    to JEI),
+  - the oldest Forge each file accepts (38.0.2, 39.0.0, 40.0.47, 41.0.94, 42.0.0, 43.0.0, 44.0.0, 45.0.0) and
+    Fabric with the loader and Fabric API of the time (loader 0.12.12 on 1.18, 0.13.3 on 1.18.2, 0.14.9 on 1.19.2).
+- Every release JAR started in a real install of every game version it covers (`tools/prodall.sh`, 16 more
+  combinations).
+
+Known for these versions: Forge 38.0.0 and 38.0.1 (the first two builds for 1.18) cannot start or create a world by
+themselves. JEI 9.0 – 9.3 cannot tell what is hidden, and JEI before 11.5 does not report hiding while you play (it
+counts from the next join). EMI before 1.0 (Fabric 1.18.2, 1.19, 1.19.1) cannot hide items; EMI 0.4 opens its recipe
+screen over the inventory, so closing it returns there instead of to Best in Pack.
 
 Known: JEI for Forge 1.20.2 only starts when the first inventory screen opens (its own log says so). Until then a
 click on a row answers "The recipe viewer is still loading"; after that it opens the recipe as everywhere else.

@@ -52,6 +52,14 @@ for c in chain:  # child libraries win over the parent's (same group:artifact)
     for lib in c.get("libraries", []):
         if not allowed(lib.get("rules")): continue
         key = ":".join(lib["name"].split(":")[:2] + lib["name"].split(":")[3:])
+        # Up to 1.18.2 native libraries are a classifier of the library ("natives": {"linux": "natives-linux"}), not
+        # entries of their own: LWJGL unpacks them itself when the jar is on the classpath.
+        nat = lib.get("natives", {}).get("linux")
+        nart = lib.get("downloads", {}).get("classifiers", {}).get(nat) if nat else None
+        if nart and key + ":" + nat not in seen:
+            npath = os.path.join(LIB, nart["path"]); fetch(nart["url"], npath)
+            seen[key + ":" + nat] = npath
+            cp.append(npath)
         if key in seen: continue
         art = lib.get("downloads", {}).get("artifact")
         if art:

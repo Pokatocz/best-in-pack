@@ -108,12 +108,36 @@ public final class EmiBridge implements Viewer {
 
     @Override
     public boolean typing() {
+        //#if MC < 1.19.3
+        //$$ // EMI 0.4 (the only EMI for 1.19 and 1.19.1) cannot be asked yet: look at its search box, a plain text field.
+        //$$ try {
+        //$$     return EmiApi.isSearchFocused();
+        //$$ } catch (NoSuchMethodError e) {
+        //$$     try {
+        //$$         Object search = Class.forName("dev.emi.emi.screen.EmiScreenManager").getField("search").get(null);
+        //$$         return search instanceof net.minecraft.client.gui.components.EditBox box && box.isFocused();
+        //$$     } catch (Throwable t) {
+        //$$         return false;
+        //$$     }
+        //$$ }
+        //#else
         return EmiApi.isSearchFocused();
+        //#endif
     }
 
     /** EMI keeps its key bindings in its own config ("view recipes", "view uses"), not in Minecraft's controls. */
     private static Object bind(boolean uses) throws ReflectiveOperationException {
+        //#if MC < 1.19.3
+        //$$ Class<?> config;
+        //$$ try {
+        //$$     config = Class.forName("dev.emi.emi.config.EmiConfig");
+        //$$ } catch (ClassNotFoundException e) {
+        //$$     config = Class.forName("dev.emi.emi.EmiConfig"); // where EMI 0.4 (1.19 and 1.19.1) keeps it
+        //$$ }
+        //$$ return config.getField(uses ? "viewUses" : "viewRecipes").get(null);
+        //#else
         return Class.forName("dev.emi.emi.config.EmiConfig").getField(uses ? "viewUses" : "viewRecipes").get(null);
+        //#endif
     }
 
     private static boolean matches(boolean uses, int keyCode, int scanCode) {
@@ -157,8 +181,23 @@ public final class EmiBridge implements Viewer {
     @Override
     public boolean show(ItemStack stack, boolean usages) {
         EmiStack target = EmiStack.of(stack);
+        //#if MC < 1.19.3
+        //$$ Screen before = com.bestinpack.client.Screens.current();
+        //#endif
         if (usages) EmiApi.displayUses(target);
         else EmiApi.displayRecipes(target);
+        //#if MC < 1.19.3
+        //$$ // EMI 0.4 (the EMI of 1.19 and 1.19.1) only opens its recipe screen over an inventory screen. When nothing
+        //$$ // happened, try again from the player's inventory; with no recipe to show it is back to where we were.
+        //$$ net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+        //$$ if (com.bestinpack.client.Screens.current() == before && client.player != null
+        //$$         && !(before instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen) && !ownsScreen(before)) {
+        //$$     com.bestinpack.client.Screens.set(new net.minecraft.client.gui.screens.inventory.InventoryScreen(client.player));
+        //$$     if (usages) EmiApi.displayUses(target);
+        //$$     else EmiApi.displayRecipes(target);
+        //$$     if (!ownsScreen(com.bestinpack.client.Screens.current())) com.bestinpack.client.Screens.set(before);
+        //$$ }
+        //#endif
         return true;
     }
 

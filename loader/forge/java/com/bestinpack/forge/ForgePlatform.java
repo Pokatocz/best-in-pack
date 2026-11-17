@@ -77,7 +77,11 @@ final class ForgePlatform implements Platform {
     //#if MC < 1.20.5
     //$$ @Override
     //$$ public net.minecraft.world.food.FoodProperties foodProperties(ItemStack stack, Player player) {
+    //#if MC >= 1.18.2
     //$$     return stack.getFoodProperties(player); // Forge: items may answer per stack and per eater
+    //#else
+    //$$     return stack.getItem().getFoodProperties(); // Forge 38 – 39 (1.18 – 1.18.1) has no per-stack hook yet
+    //#endif
     //$$ }
     //$$
     //#endif
@@ -99,8 +103,10 @@ final class ForgePlatform implements Platform {
     public int enchantability(ItemStack stack) {
         //#if MC >= 1.21.2
         //$$ return -1; // the enchantable component is read by the shared code
-        //#else
+        //#elif MC >= 1.19
         return stack.getEnchantmentValue();
+        //#else
+        //$$ return stack.getItemEnchantability(); // the name of the same hook in Forge 38 – 40 (1.18.x)
         //#endif
     }
 

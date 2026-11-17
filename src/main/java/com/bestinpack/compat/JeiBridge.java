@@ -1,3 +1,4 @@
+//#if MC >= 1.20
 package com.bestinpack.compat;
 
 import com.mojang.blaze3d.platform.InputConstants;
@@ -164,3 +165,4 @@ public class JeiBridge implements IModPlugin, Viewer {
         else r.getEditModeConfig().showIngredientUsingConfigFile(typed, mezz.jei.api.runtime.IEditModeConfig.HideMode.SINGLE);
     }
 }
+//#endif

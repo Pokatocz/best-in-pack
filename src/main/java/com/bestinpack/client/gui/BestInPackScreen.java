@@ -835,7 +835,19 @@ public class BestInPackScreen extends Screen {
     }
 
     @Override
+    //#if MC >= 1.20
     public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    //#else
+    //$$ public void render(com.mojang.blaze3d.vertex.PoseStack pose, int mouseX, int mouseY, float delta) {
+    //$$     // Before 1.20 screens draw through a PoseStack; the mod's own GuiGraphics wraps it.
+    //$$     renderScreen(new GuiGraphics(pose, this), mouseX, mouseY, delta);
+    //#if MC < 1.19.3
+    //$$     Tooltip.flush(pose, this, mouseX, mouseY); // button tooltips go on top of the table
+    //#endif
+    //$$ }
+    //$$
+    //$$ private void renderScreen(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    //#endif
         //#if MC < 1.20.2
         //$$ this.renderBackground(context); // Screen.render only draws the background itself since 1.20.2
         //#endif
@@ -998,7 +1010,11 @@ public class BestInPackScreen extends Screen {
             }
         }
         if (pendingItemTooltip != null) {
+            //#if MC >= 1.20
             Gfx.itemTooltip(context, this.font, pendingItemTooltip, mouseX, mouseY);
+            //#else
+            //$$ this.renderTooltip(context.pose(), pendingItemTooltip, mouseX, mouseY); // the screen's own: loaders hook it
+            //#endif
         } else if (pendingTooltip != null) {
             Gfx.textTooltip(context, this.font, pendingTooltip, mouseX, mouseY);
         }
@@ -1228,6 +1244,10 @@ public class BestInPackScreen extends Screen {
             // A clicked button keeps keyboard focus and stays drawn highlighted ("Details" looked switched on).
             // Only the search box should keep focus after a mouse click.
             if (!(getFocused() instanceof EditBox)) setFocused(null);
+            //#if MC < 1.19.4
+            //$$ // Before 1.19.4 the box keeps a focus flag of its own, and only hears about clicks that reach it.
+            //$$ if (getFocused() == null) searchField.setFocus(false);
+            //#endif
             return true;
         }
         return handleClick(mouseX, mouseY, button);

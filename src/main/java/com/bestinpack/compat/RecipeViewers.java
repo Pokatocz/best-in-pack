@@ -24,12 +24,34 @@ public final class RecipeViewers {
         if (!resolved) {
             resolved = true;
             viewer = load("emi", "com.bestinpack.compat.EmiBridge");
+            //#if MC >= 1.20
             if (viewer == null) viewer = load("jei", "com.bestinpack.compat.JeiBridge");
+            //#else
+            //$$ // JEI 9 – 13 (Minecraft 1.18 – 1.19.4): an API that changed with almost every game version.
+            //$$ if (viewer == null && !jeiIsRei()) viewer = load("jei", "com.bestinpack.compat.JeiOldBridge");
+            //#endif
             if (viewer == null) viewer = load("roughlyenoughitems", "com.bestinpack.compat.ReiBridge");
         }
         return viewer;
     }
 
+    //#if MC < 1.20
+    //$$ /**
+    //$$  * REI for Forge can stand in for JEI so that JEI plugins of other mods work with it: REI 7 (1.18 – 1.18.1)
+    //$$  * brings a mod called "jei" itself, later ones through its "plugin compatibilities" add-on. The viewer on
+    //$$  * screen is REI then, so REI's own bridge is the one to use.
+    //$$  */
+    //$$ private static boolean jeiIsRei() {
+    //$$     try {
+    //$$         if (!Platform.get().isModLoaded("roughlyenoughitems")) return false;
+    //$$         Class.forName("me.shedaniel.rei.jeicompat.JEIPluginDetector", false, RecipeViewers.class.getClassLoader());
+    //$$         return true;
+    //$$     } catch (Throwable t) {
+    //$$         return false;
+    //$$     }
+    //$$ }
+    //$$
+    //#endif
     private static Viewer load(String modId, String className) {
         try {
             if (!Platform.get().isModLoaded(modId)) return null;
@@ -116,7 +138,11 @@ public final class RecipeViewers {
     public static void setHiddenForTest(ItemStack stack, boolean hidden) {
         try {
             if (get() != null && "JEI".equals(get().name())) {
+                //#if MC >= 1.20
                 Class.forName("com.bestinpack.compat.JeiBridge").getMethod("setHiddenForTest", ItemStack.class, boolean.class)
+                //#else
+                //$$ Class.forName("com.bestinpack.compat.JeiOldBridge").getMethod("setHiddenForTest", ItemStack.class, boolean.class)
+                //#endif
                         .invoke(null, stack, hidden);
             }
         } catch (Throwable t) {

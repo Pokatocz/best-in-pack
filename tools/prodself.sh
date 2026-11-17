@@ -6,6 +6,8 @@
 # This is how viewers are tested where the development run cannot load them (Forge 1.20 - 1.20.4: mods from Modrinth
 # are SRG-named there) and how the remapped release JARs are tested as a whole.
 # Afterwards build/libs holds the release JAR again (copied back from dist/ when it is there, else rebuilt).
+# REUSE_SELF=1 reuses the self-test JAR of an earlier run while the sources are unchanged; PRODCACHE (see
+# prodcheck.sh) keeps the installed game between runs.
 L="$1"; E="$2"; MC="$3"; VIEWER="${4:-jei}"
 cd "$(dirname "$0")/.."
 VERSION=$(cat VERSION)
@@ -13,6 +15,12 @@ D=builds/$L-$E
 OUT=${SELFDIR:-/tmp/prodself}; mkdir -p $OUT/mods-$L-$MC-$VIEWER
 GRADLE=${GRADLE:-gradle}; GRADLE_FABRIC=${GRADLE_FABRIC:-$GRADLE}
 JAVA21_HOME=${JAVA21_HOME:-/usr/lib/jvm/java-21-openjdk-amd64}; JAVA25_HOME=${JAVA25_HOME:-/usr/lib/jvm/java-25-openjdk-amd64}
+SELF=$OUT/BestInPack-$L-$E-$VERSION-selftest.jar
+# REUSE_SELF=1: take the self-test JAR an earlier run built for this loader and era (several game versions or
+# viewers in a row) instead of building it again - only while no source file is newer than it.
+if [ -n "$REUSE_SELF" ] && [ -f "$SELF" ] && [ -z "$(find src loader tools/gen.py tools/swaps.py tools/targets.py tools/pp.py -newer "$SELF" -type f | head -1)" ]; then
+  :
+else
 python3 tools/gen.py $L $E > /dev/null || { echo "prodself $L $MC $VIEWER: GEN-FAIL"; exit 1; }
 G=$GRADLE; [ "$L" = fabric ] && G=$GRADLE_FABRIC
 grep -qE "net.minecraftforge.gradle' version '\[6|net.neoforged.gradle.userdev" $D/build.gradle && G=${GRADLE8:-gradle}
@@ -21,11 +29,11 @@ build() { ( cd $D && rm -rf build/libs && JAVA_HOME=$GJ JAVA_TOOL_OPTIONS= timeo
 build -PwithSelfTest
 JAR=$(ls $D/build/libs/*.jar 2>/dev/null | grep -v sources | head -1)
 [ -n "$JAR" ] || { echo "prodself $L $MC $VIEWER: BUILD-FAIL"; grep -E "error:|FAILURE|What went wrong" -A3 $D/build-self.log | head -12; exit 1; }
-SELF=$OUT/BestInPack-$L-$E-$VERSION-selftest.jar
 cp "$JAR" "$SELF"
 unzip -l "$SELF" | grep -q "client/SmokeTest" || { echo "prodself $L $MC $VIEWER: the self-test is not in the JAR"; exit 1; }
 # the release JAR back into build/libs, so nothing with test code can be packaged by accident
 if [ -f dist/BestInPack-$L-$E-$VERSION.jar ]; then rm -f "$JAR"; cp dist/BestInPack-$L-$E-$VERSION.jar "$JAR"; else build; fi
+fi
 EXTRA=
 if [ "$VIEWER" != none ]; then
   M=$(realpath $OUT/mods-$L-$MC-$VIEWER)

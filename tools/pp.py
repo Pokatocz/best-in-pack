@@ -77,14 +77,17 @@ def process_text(text, mc, loader, name="?"):
     if stack: raise SyntaxError("%s: unclosed #if" % name)
     return "\n".join(out)
 
-def apply_swaps(text, mc, loader):
+def apply_swaps(text, mc, loader, name=""):
+    """Each swap: (condition, regex, replacement[, file regex]); with a file regex the swap only applies there."""
     try:
         from swaps import SWAPS
     except ImportError:
         return text
-    for cond, rx, repl in SWAPS:
+    for swap in SWAPS:
+        cond, rx, repl = swap[:3]
+        if len(swap) > 3 and not re.search(swap[3], name.replace(os.sep, "/")): continue
         if evaluate(cond, mc, loader):
-            text = re.sub(rx, repl, text)
+            text = re.sub(rx, repl, text, flags=re.M)
     return text
 
 TEXT_EXT = (".java", ".json", ".toml", ".mcmeta", ".txt", ".cfg", ".properties")
@@ -100,7 +103,7 @@ def process_tree(src, dst, mc, loader):
                 text = open(sp, encoding="utf-8").read()
                 res = process_text(text, mc, loader, sp)
                 if f.endswith(".java"):
-                    res = apply_swaps(res, mc, loader)
+                    res = apply_swaps(res, mc, loader, sp)
                 # a Java file whose whole body is switched off is left out (loader- or version-only classes)
                 if f.endswith(".java") and not res.strip():
                     continue

@@ -15,7 +15,7 @@ displayTest="IGNORE_ALL_VERSION"
 [[dependencies.bestinpack]]
 modId="forge"
 mandatory=true
-versionRange="[${forge_min},)"
+versionRange="[${forge_dep},)"
 ordering="NONE"
 side="CLIENT"
 

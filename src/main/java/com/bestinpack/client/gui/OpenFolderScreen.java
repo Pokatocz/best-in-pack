@@ -28,7 +28,13 @@ public final class OpenFolderScreen extends Screen {
     }
 
     @Override
+    //#if MC >= 1.20
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
         if (parent != null) parent.render(graphics, -1, -1, delta);
     }
+    //#else
+    //$$ public void render(com.mojang.blaze3d.vertex.PoseStack pose, int mouseX, int mouseY, float delta) {
+    //$$     if (parent != null) parent.render(pose, -1, -1, delta);
+    //$$ }
+    //#endif
 }

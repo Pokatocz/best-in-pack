@@ -2,7 +2,7 @@
 import os, shutil, sys, json
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pp
-from targets import ERAS, NEOFORGE, FORGE, era, modrinth_id, java_for, toolchain_for, jei_fabric_maven, BLAMEJARED_REPO
+from targets import ERAS, NEOFORGE, FORGE, FORGE_MIN, era, modrinth_id, java_for, toolchain_for, jei_fabric_maven, BLAMEJARED_REPO, REI_MAVEN, REI_REPOS
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MOD_VERSION = open(os.path.join(ROOT, "VERSION")).read().strip()
@@ -22,6 +22,8 @@ def fabric_api_for(mc):
             key = tuple(int(x) for x in num.split(".") if x.isdigit())
             if game not in FABRIC_API or key > FABRIC_API[game][0]:
                 FABRIC_API[game] = (key, v)
+    if mc not in FABRIC_API and mc.count(".") == 2:
+        mc = mc.rsplit(".", 1)[0]  # 1.18.1 uses the Fabric API built for 1.18
     return FABRIC_API[mc][1]
 
 
@@ -73,14 +75,24 @@ def generate(loader, era_name):
     rei = pick("rei", mc, loader, versions)
     arch = pick("architectury-api", mc, loader, versions)
     if not (rei and arch): rei = arch = None
-    # EMI exists for 1.20 - 1.21.1 only (Fabric, Forge up to 1.20.2, NeoForge from 1.20.4)
+    rei_maven = REI_MAVEN.get(mc) if not rei else None
+    # EMI exists for 1.18.2 - 1.21.1 only (not for every loader of every version: see tools/data/emi-table.json)
     emi = pick("emi", mc, loader, versions)
-    if not jei: os.remove(os.path.join(src_java, "com/bestinpack/compat/JeiBridge.java"))
-    if not rei: os.remove(os.path.join(src_java, "com/bestinpack/compat/ReiBridge.java"))
-    if not emi: os.remove(os.path.join(src_java, "com/bestinpack/compat/EmiBridge.java"))
+    # Before 1.20 JEI is served by JeiOldBridge (JEI 9 - 13), from 1.20 on by JeiBridge; the other one is switched off
+    # by its own //#if and never reaches the build.
+    jei_class = "JeiBridge" if v >= pp.vnum("1.20") else "JeiOldBridge"
+    def drop(cls):
+        p = os.path.join(src_java, "com/bestinpack/compat/%s.java" % cls)
+        if os.path.exists(p): os.remove(p)
+    if not jei: drop(jei_class)
+    if not (rei or rei_maven): drop("ReiBridge")
+    if not emi: drop("EmiBridge")
     deps = []
     if jei_dep: deps.append(jei_dep)
     if rei: deps += ['compileOnly "maven.modrinth:rei:%s"' % rei, 'compileOnly "maven.modrinth:architectury-api:%s"' % arch]
+    if rei_maven:
+        deps += ['compileOnly "me.shedaniel:RoughlyEnoughItems-%s:%s"' % (loader, rei_maven[0]),
+                 'compileOnly "dev.architectury:architectury-%s:%s"' % (loader, rei_maven[1])]
     if emi: deps.append('compileOnly "maven.modrinth:emi:%s"' % emi)
 
     subst = {"${version}": MOD_VERSION, "${mc_range}": mc_range_forge(versions)}
@@ -90,6 +102,8 @@ def generate(loader, era_name):
     if loader == "forge":
         majors = [int(FORGE[x].split(".")[0]) for x in versions if x in FORGE]
         subst["${forge_min}"] = str(min(majors))
+        # the oldest Forge build the JAR was checked against, where that is not simply the first of its major
+        subst["${forge_dep}"] = FORGE_MIN.get(name, str(min(majors)))
     for root, dirs, files in os.walk(src_res):
         for f in files:
             if f.endswith((".toml", ".json")):
@@ -110,7 +124,14 @@ def generate(loader, era_name):
                         "fabric-api": "*"},
             "suggests": {"jei": "*", "roughlyenoughitems": "*", "emi": "*"},
         }
-        if jei: fmj["entrypoints"]["jei_mod_plugin"] = ["com.bestinpack.compat.JeiBridge"]
+        if jei: fmj["entrypoints"]["jei_mod_plugin"] = ["com.bestinpack.compat." + jei_class]
+        if v < pp.vnum("1.20"):
+            # Packs of these versions keep the loader and the Fabric API they were made with: any loader that runs
+            # the game on Java 17 will do, and Fabric API was still called "fabric" until 0.59 (August 2022) -
+            # every later one answers to that name as well.
+            fmj["depends"]["fabricloader"] = ">=0.12.0"
+            del fmj["depends"]["fabric-api"]
+            fmj["depends"]["fabric"] = "*"
         json.dump(fmj, open(os.path.join(src_res, "fabric.mod.json"), "w"), indent=2)
         write_fabric(out, mc, java, tc, api, deps, versions)
     elif loader == "neoforge":
@@ -148,6 +169,11 @@ MODRINTH_REPO = """    exclusiveContent {
         forRepository { maven { name = 'Modrinth'; url = 'https://api.modrinth.com/maven' } }
         filter { includeGroup 'maven.modrinth' }
     }"""
+
+
+def own_maven(dep):
+    """A dependency from its author's maven (REI 7, Architectury 3): its pom lists libraries the build does not need."""
+    return "me.shedaniel:" in dep or "dev.architectury:" in dep
 
 
 def write_neoforge_ng(out, mc, java, tc, deps):
@@ -240,6 +266,8 @@ def write_fabric(out, mc, java, tc, api, deps, versions):
     impl = "modImplementation" if obf else "implementation"
     compile_only = "modCompileOnly" if obf else "compileOnly"
     deps = [d.replace("compileOnly", compile_only, 1) for d in deps]
+    own = any(own_maven(d) for d in deps)
+    deps = [d.replace(' "', '("', 1) + ') { transitive = false }' if own_maven(d) else d for d in deps]
     open(os.path.join(out, "settings.gradle"), "w").write("""pluginManagement {
     repositories {
         maven { name = 'Fabric'; url = 'https://maven.fabricmc.net/' }
@@ -280,7 +308,8 @@ java { toolchain.languageVersion = JavaLanguageVersion.of(%(tc)d) }
 """ % {"plugin": plugin, "ver": MOD_VERSION, "mc": mc, "mappings": mappings, "impl": impl, "api": api,
        # 26.x Fabric API needs loader 0.18.4+; 1.21.x keeps the loader it was tested with
        "loader": "0.19.5",
-       "deps": "\n    ".join(deps), "java": java, "tc": tc, "modrinth": MODRINTH_REPO + "\n" + BLAMEJARED_REPO})
+       "deps": "\n    ".join(deps), "java": java, "tc": tc,
+       "modrinth": MODRINTH_REPO + "\n" + BLAMEJARED_REPO + ("\n" + REI_REPOS if own else "")})
 
 
 def write_forge(out, mc, java, tc, deps):
@@ -336,7 +365,8 @@ sourceSets.each {
 def write_forge_srg(out, mc, java, tc, deps):
     """Forge 46 – 49 (1.20 – 1.20.4) runs with SRG names: ForgeGradle 6 (Gradle 8) builds and reobfuscates the JAR.
     Mods from Modrinth are SRG-named production JARs, so compile dependencies go through fg.deobf."""
-    deps = [d.replace('compileOnly "', 'compileOnly fg.deobf("', 1) + ")" for d in deps]
+    own = any(own_maven(d) for d in deps)
+    deps = [d.replace('compileOnly "', 'compileOnly fg.deobf("', 1) + (", { transitive = false })" if own_maven(d) else ")") for d in deps]
     open(os.path.join(out, "build.gradle"), "w").write("""plugins {
     id 'java'
     id 'net.minecraftforge.gradle' version '[6.0.24,6.2)'
@@ -374,7 +404,7 @@ jar.finalizedBy('reobfJar')
 }
 """,
        # plain repository: fg.deobf serves the remapped copies from its own local repo under the same group
-       "modrinth": "    maven { name = 'Modrinth'; url = 'https://api.modrinth.com/maven' }"})
+       "modrinth": "    maven { name = 'Modrinth'; url = 'https://api.modrinth.com/maven' }" + ("\n" + REI_REPOS if own else "")})
 
 
 if __name__ == "__main__":

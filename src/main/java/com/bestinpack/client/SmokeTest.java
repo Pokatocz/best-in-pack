@@ -370,7 +370,11 @@ public final class SmokeTest {
         if (ticks > 10) {
             String text = "?";
             try {
+                //#if MC < 1.20
+                //$$ text = emiSearchText();
+                //#else
                 text = String.valueOf(Class.forName("dev.emi.emi.api.EmiApi").getMethod("getSearchText").invoke(null));
+                //#endif
             } catch (Throwable t) {
                 log("EMI search test could not read EMI: " + t);
             }
@@ -383,7 +387,11 @@ public final class SmokeTest {
                 check(!(now instanceof BestInPackScreen), "typing B in EMI's search does not open Best in Pack");
                 check(text.toLowerCase(java.util.Locale.ROOT).contains("b"), "the B reached EMI's search box");
                 try {
+                    //#if MC < 1.20
+                    //$$ emiSetSearchText("");
+                    //#else
                     Class.forName("dev.emi.emi.api.EmiApi").getMethod("setSearchText", String.class).invoke(null, "");
+                    //#endif
                     Object search = Class.forName("dev.emi.emi.screen.EmiScreenManager").getField("search").get(null);
                     ((net.minecraft.client.gui.components.EditBox) search).setFocused(false);
                 } catch (Throwable ignored) {}
@@ -422,7 +430,18 @@ public final class SmokeTest {
             }
             shot(client, "smoke_survival");
         }
+        //#if MC < 1.20
+        //$$ // For the eye: the tooltip of the BiP button (before 1.19.3 it is drawn by the mod's own button class).
+        //$$ if (ticks == 42 && Screens.current() instanceof InventoryScreen && BestInPackClient.buttonOf(Screens.current()) != null) {
+        //$$     net.minecraft.client.gui.components.AbstractWidget bip = BestInPackClient.buttonOf(Screens.current());
+        //$$     hover(client, bip.getX() + bip.getWidth() / 2.0, bip.getY() + bip.getHeight() / 2.0);
+        //$$ }
+        //$$ if (ticks == 52) fixHover(client);
+        //$$ if (ticks == 130) shot(client, "smoke_invbutton");
+        //$$ if (ticks == 135) {
+        //#else
         if (ticks == 50) {
+        //#endif
             Screens.set(null);
             if (com.bestinpack.platform.Platform.get().isModLoaded("emi")) {
                 // stay in survival: its inventory leaves room for EMI's item panel
@@ -480,6 +499,38 @@ public final class SmokeTest {
                 .invoke(null, emiStackOf(stack), hidden, false);
     }
 
+    //#if MC < 1.20
+    //$$ // EMI 0.4 – 0.7 (Fabric 1.18.2, 1.19, 1.19.1): no search text in the API before 0.5, no hiding before 1.0.
+    //$$ private static net.minecraft.client.gui.components.EditBox emiSearchBox() throws ReflectiveOperationException {
+    //$$     return (net.minecraft.client.gui.components.EditBox) Class.forName("dev.emi.emi.screen.EmiScreenManager").getField("search").get(null);
+    //$$ }
+    //$$
+    //$$ private static String emiSearchText() throws ReflectiveOperationException {
+    //$$     try {
+    //$$         return String.valueOf(Class.forName("dev.emi.emi.api.EmiApi").getMethod("getSearchText").invoke(null));
+    //$$     } catch (NoSuchMethodException e) {
+    //$$         return emiSearchBox().getValue();
+    //$$     }
+    //$$ }
+    //$$
+    //$$ private static void emiSetSearchText(String text) throws ReflectiveOperationException {
+    //$$     try {
+    //$$         Class.forName("dev.emi.emi.api.EmiApi").getMethod("setSearchText", String.class).invoke(null, text);
+    //$$     } catch (NoSuchMethodException e) {
+    //$$         emiSearchBox().setValue(text);
+    //$$     }
+    //$$ }
+    //$$
+    //$$ private static boolean emiCanHide() {
+    //$$     try {
+    //$$         Class.forName("dev.emi.emi.runtime.EmiHidden");
+    //$$         return true;
+    //$$     } catch (Throwable t) {
+    //$$         return false;
+    //$$     }
+    //$$ }
+    //$$
+    //#endif
     private static int[] emiAt;
     private static int emiFound = -1, emiPressed = -1;
 
@@ -492,7 +543,11 @@ public final class SmokeTest {
         try {
             if (ticks == 1) {
                 Screens.set(new InventoryScreen(client.player));
+                //#if MC < 1.20
+                //$$ emiSetSearchText("diamond sword");
+                //#else
                 Class.forName("dev.emi.emi.api.EmiApi").getMethod("setSearchText", String.class).invoke(null, "diamond sword");
+                //#endif
             }
             // EMI searches on its own thread and lays its panel out while drawing: look for the sword for up to 15 s.
             if (ticks >= 20 && emiAt == null && ticks % 10 == 0) {
@@ -535,6 +590,12 @@ public final class SmokeTest {
                 shot(client, "smoke_emi_jump");
                 check(RecipeViewers.hidingReady() && !RecipeViewers.isHidden(sword), "EMI lists the Diamond Sword (not hidden)");
                 check(!ItemIndex.ranksFor(Items.DIAMOND_SWORD).isEmpty(), "Diamond Sword is ranked with EMI installed");
+                //#if MC < 1.20
+                //$$ if (!emiCanHide()) {
+                //$$     log("note: this EMI cannot hide stacks yet (EMI before 1.0) - the hiding checks are skipped");
+                //$$     emiPressed = -2;
+                //$$ } else
+                //#endif
                 emiSetHidden(sword, true);
             }
             if (emiPressed > 0 && ticks == emiPressed + 40) {
@@ -554,7 +615,11 @@ public final class SmokeTest {
         }
         if (emiPressed == -2 || (emiPressed > 0 && ticks >= emiPressed + 70)) {
             try {
+                //#if MC < 1.20
+                //$$ emiSetSearchText("");
+                //#else
                 Class.forName("dev.emi.emi.api.EmiApi").getMethod("setSearchText", String.class).invoke(null, "");
+                //#endif
             } catch (Throwable ignored) {}
             Screens.set(null);
             var server = client.getSingleplayerServer();
@@ -608,7 +673,43 @@ public final class SmokeTest {
         }
     }
 
+    //#if MC < 1.20
+    //$$ private static int lookTick;
+    //$$
+    //$$ /**
+    //$$  * For the eye, not a check: the tooltips of the "?" and the gear button on the rankings screen, photographed
+    //$$  * (before 1.19.3 they are drawn by the mod's own button classes, after the table). True once done.
+    //$$  */
+    //$$ private static boolean looked(Minecraft client) {
+    //$$     if (lookTick < 0) return true;
+    //$$     try {
+    //$$         lookTick++;
+    //$$         if (lookTick == 1 && client.level != null) Screens.set(new BestInPackScreen(null));
+    //$$         if (Screens.current() instanceof BestInPackScreen s) {
+    //$$             if (lookTick == 10) {
+    //$$                 double[] c = s.widgetCenterForTest("help");
+    //$$                 hover(client, c[0], c[1]);
+    //$$             }
+    //$$             if (lookTick == 20 || lookTick == 70) fixHover(client);
+    //$$             if (lookTick == 50) shot(client, "smoke_help");
+    //$$             if (lookTick == 60) hover(client, s.width - 20, s.height - 16);
+    //$$             if (lookTick == 100) shot(client, "smoke_gear");
+    //$$             if (lookTick < 105) return false;
+    //$$         }
+    //$$     } catch (Throwable t) {
+    //$$         log("look at the button tooltips failed: " + t);
+    //$$     }
+    //$$     Screens.set(null);
+    //$$     lookTick = -1;
+    //$$     ticks = 0; // the result is logged on the next tick
+    //$$     return false;
+    //$$ }
+    //$$
+    //#endif
     private static void finish(Minecraft client) {
+        //#if MC < 1.20
+        //$$ if (!looked(client)) return;
+        //#endif
         if (ticks == 1) {
             if (FAILURES.isEmpty()) log("SMOKE OK");
             else log("SMOKE FAILED " + FAILURES);

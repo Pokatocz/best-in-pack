@@ -1,4 +1,28 @@
 {
+ "1.18": {
+  "fabric": "eueI9czw|3.0.1"
+ },
+ "1.18.1": {
+  "fabric": "eueI9czw|3.0.1"
+ },
+ "1.18.2": {
+  "fabric": "nVxObSbX|3.2.5"
+ },
+ "1.19": {
+  "fabric": "oU5qfeR6|4.0.4"
+ },
+ "1.19.1": {
+  "fabric": "2Ys0a7JE|4.0.5"
+ },
+ "1.19.2": {
+  "fabric": "V4hnfgRO|4.1.2"
+ },
+ "1.19.3": {
+  "fabric": "id0aLmxO|5.1.0"
+ },
+ "1.19.4": {
+  "fabric": "lMqXEzUw|6.3.1"
+ },
  "1.20": {
   "fabric": "RTFDnTKf|7.0.1"
  },

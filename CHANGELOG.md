@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.9.5 – Minecraft 1.18 – 1.19.4
+- Fabric and Forge for every Minecraft version from 1.18 to 1.19.4 (10 more files, same features; NeoForge did not
+  exist yet). The 38 files for 1.20 – 26.3 are unchanged.
+- Recipe viewers on these versions: JEI 9 – 13 (its API changed with almost every game version, so Best in Pack
+  finds JEI's functions by name there), REI 7 – 11, and EMI where EMI exists (Fabric from 1.18.2, Forge from 1.19.2).
+  REI for Forge 1.18 – 1.18.1 also answers to the name "jei"; REI's own bridge is used then.
+- What old viewers cannot do stays out: JEI 9.0 – 9.3 cannot tell what is hidden, JEI before 11.5 does not report
+  hiding while you play (it counts from the next join), EMI before 1.0 cannot hide items, and EMI 0.4 (1.19, 1.19.1)
+  opens its recipe screen over the inventory.
+- The Forge files name the oldest Forge they need where it matters: 40.0.47 on 1.18.2 and 41.0.94 on 1.19.
+- Tools: `tools/forgemin.py` (the oldest Forge build a JAR resolves against); an install cache, an older Fabric
+  loader / Fabric API and an older Forge build on request in `tools/prodcheck.sh`; a chosen JEI release in
+  `tools/testmods.py`.
+
 ## 0.9.5 – EMI
 - EMI support, the same as JEI and REI: click a row for the recipe (right-click for uses), press B over an item in
   EMI's item list to jump to its row, items hidden in EMI are left out of the rankings, and EMI's own

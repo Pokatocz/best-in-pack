@@ -5,6 +5,11 @@ LAND = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 
 ERAS = [
     # name,              compile,  covered versions
+    ("1.18-1.18.1",      "1.18.1", ["1.18", "1.18.1"]),
+    ("1.18.2",           "1.18.2", ["1.18.2"]),
+    ("1.19-1.19.2",      "1.19.2", ["1.19", "1.19.1", "1.19.2"]),
+    ("1.19.3",           "1.19.3", ["1.19.3"]),
+    ("1.19.4",           "1.19.4", ["1.19.4"]),
     ("1.20-1.20.1",      "1.20.1", ["1.20", "1.20.1"]),
     ("1.20.2",           "1.20.2", ["1.20.2"]),
     ("1.20.3-1.20.4",    "1.20.4", ["1.20.3", "1.20.4"]),
@@ -25,10 +30,17 @@ NEOFORGE = {"1.20.2": "20.2.93", "1.20.3": "20.3.8-beta", "1.20.4": "20.4.253", 
             "1.21.5": "21.5.101", "1.21.6": "21.6.20-beta", "1.21.7": "21.7.25-beta", "1.21.8": "21.8.57",
             "1.21.9": "21.9.16-beta", "1.21.10": "21.10.64", "1.21.11": "21.11.48", "26.1": "26.1.0.19-beta",
             "26.1.1": "26.1.1.15-beta", "26.1.2": "26.1.2.125", "26.2": "26.2.0.93", "26.3": "26.3.0.100"}
-FORGE = {"1.20": "46.0.14", "1.20.1": "47.4.28", "1.20.2": "48.1.0", "1.20.3": "49.0.2", "1.20.4": "49.2.13", "1.20.6": "50.2.14",
+FORGE = {"1.18": "38.0.17", "1.18.1": "39.1.2", "1.18.2": "40.3.12", "1.19": "41.1.0", "1.19.1": "42.0.9", "1.19.2": "43.5.2",
+         "1.19.3": "44.1.23", "1.19.4": "45.4.5",
+         "1.20": "46.0.14", "1.20.1": "47.4.28", "1.20.2": "48.1.0", "1.20.3": "49.0.2", "1.20.4": "49.2.13", "1.20.6": "50.2.14",
          "1.21": "51.0.33", "1.21.1": "52.1.20", "1.21.3": "53.1.16", "1.21.4": "54.1.22", "1.21.5": "55.1.18",
          "1.21.6": "56.0.9", "1.21.7": "57.0.3", "1.21.8": "58.1.26", "1.21.9": "59.0.5", "1.21.10": "60.1.18",
          "1.21.11": "61.2.4", "26.1": "62.0.9", "26.1.1": "63.0.2", "26.1.2": "64.1.5", "26.2": "65.1.5", "26.3": "66.1.2"}
+
+# The oldest Forge build a JAR needs when that is not the first build of its oldest major (found with
+# tools/forgemin.py): ItemStack.getFoodProperties came with Forge 40.0.47, and Forge renamed most of its client
+# events in 41.0.94, in the middle of 1.19.
+FORGE_MIN = {"1.18.2": "40.0.47", "1.19-1.19.2": "41.0.94"}
 
 # JEI for Fabric 1.21.5 – 1.21.8 is only on JEI's own maven (not on Modrinth).
 JEI_FABRIC_MAVEN = {"1.21.5": "21.4.0.27", "1.21.7": "23.1.0.8", "1.21.8": "24.2.0.6"}
@@ -36,6 +48,12 @@ BLAMEJARED_REPO = """    exclusiveContent {
         forRepository { maven { name = 'BlameJared'; url = 'https://maven.blamejared.com' } }
         filter { includeGroup 'mezz.jei' }
     }"""
+
+
+# REI for 1.18 – 1.18.1 is not on Modrinth: REI 7 and Architectury 3 come from their authors' mavens.
+REI_MAVEN = {"1.18.1": ("7.4.456", "3.9.66")}
+REI_REPOS = """    maven { name = 'shedaniel'; url = 'https://maven.shedaniel.me/'; content { includeGroup 'me.shedaniel' } }
+    maven { name = 'architectury'; url = 'https://maven.architectury.dev/'; content { includeGroup 'dev.architectury' } }"""
 
 
 def jei_fabric_maven(versions):
