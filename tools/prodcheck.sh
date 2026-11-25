@@ -104,10 +104,19 @@ savecache() {   # the install as it is after a run: with the libraries the launc
   [ -n "$CACHE" ] && [ -z "$CACHED" ] && [ -d "$W/libraries" ] && cp -a "$W/versions" "$W/assets" "$W/libraries" "$CACHE/" && touch "$CACHE/ready"
 }
 if [ "$SELFTEST" = "true" ]; then
-  JAVA="$JAVA_BIN" timeout ${SMOKE_TIMEOUT:-1200} python3 "$TOOLS/prodlaunch.py" "$W" "$VID" -Dbestinpack.selftest=true > "$W/run.log" 2>&1
+  JAVA="$JAVA_BIN" timeout ${SMOKE_TIMEOUT:-1200} python3 "$TOOLS/prodlaunch.py" "$W" "$VID" -Dbestinpack.selftest=true > "$W/run.log" 2>&1 &
+  PID=$!
+  # A loader that refuses the mods (a recipe viewer built for a newer game or loader version) shows an error screen
+  # and the self-test never starts: stop then instead of waiting for the timeout.
+  REFUSED=
+  while kill -0 $PID 2>/dev/null; do
+    sleep 5
+    cat "$W/run.log" "$W/logs/latest.log" 2>/dev/null | grep -qE "Missing or unsupported mandatory dependencies|Incompatible mods found|Mod loading has failed|LoadingFailedException" && { REFUSED=1; sleep 5; break; }
+  done
   grep -E "SMOKE" "$W/run.log" | grep -v "SMOKE: waiting" | sed -E 's/^\[[0-9:]+\] \[[^]]*\] (\[[^]]*\]: |\([^)]*\) )//' | cut -c1-300
-  pkill -KILL -f "gameDir $W" 2>/dev/null
+  pkill -KILL -f "gameDir $W" 2>/dev/null; kill $PID 2>/dev/null; wait $PID 2>/dev/null
   savecache
+  [ -n "$REFUSED" ] && { cat "$W/run.log" "$W/logs/latest.log" 2>/dev/null | grep -E "requires |Incompatible mods|depends on" | sed -E 's/^.*\]: //' | sort -u | head -4 | cut -c1-200; fail "the loader refused to load the mods ($VID)"; }
   grep -q "SMOKE OK" "$W/run.log" && { echo "prodcheck $L $MC: OK (self-test, $VID)"; exit 0; }
   fail "self-test ($VID)"
 fi

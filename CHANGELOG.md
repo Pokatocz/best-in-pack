@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.9.6 – creative search fix
+- Fixed: with Best in Pack installed, the search in the creative inventory found nothing (Minecraft 1.21 and newer,
+  all loaders; [#3](https://github.com/Pokatocz/best-in-pack/issues/3)). Best in Pack builds the creative tabs to
+  read their items. From 1.21 the creative screen fills the game's search only when it builds the tabs itself, so
+  it found them already built and left the search empty. Best in Pack now makes the game forget that build, and
+  the screen builds the tabs and the search as it does without the mod.
+- Fixed: the letter B typed into the creative inventory search or the recipe book search opened Best in Pack
+  instead of being written (all versions).
+- All 48 files are rebuilt; nothing else changed.
+- Tested: the in-game test now also searches the creative inventory and types B into both search boxes. It ran in
+  a real install of every loader and game version (85 installs, 55 of them with JEI – everywhere a JEI release
+  loads), again with EMI and REI in 9 more runs, and every release JAR was started on every game version it covers.
+- Tools: `tools/prodcheck.sh` stops at once when the loader refuses the mods (for example a recipe viewer made for
+  a newer game version) instead of waiting for the timeout.
+
 ## 0.9.5 – Minecraft 1.18 – 1.19.4
 - Fabric and Forge for every Minecraft version from 1.18 to 1.19.4 (10 more files, same features; NeoForge did not
   exist yet). The 38 files for 1.20 – 26.3 are unchanged.

@@ -126,6 +126,10 @@ out of the release JARs.
   installs of Fabric 1.20, 1.21 and 1.21.11 and Forge 1.20, 1.20.1, 1.20.2 and 1.20.4 (`tools/prodself.sh`).
 - `tools/jarcheck.py` checks version, Java level and that no test code is in any release JAR.
 
+For **0.9.6** all 48 files were rebuilt, and the whole in-game test – now with the creative inventory search and
+typing B into the search boxes – ran in a real install of every loader and game version (`tools/prodself.sh`,
+85 installs: 55 with JEI, the rest have no JEI release that loads there), plus 9 more runs with EMI and REI.
+
 The ten files for **1.18 – 1.19.4** (added to 0.9.5 later, the 38 files above were not rebuilt) went through the same
 steps, and more of them in real installs, because recipe viewers changed a lot in those years:
 

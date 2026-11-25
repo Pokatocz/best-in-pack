@@ -64,6 +64,8 @@ public final class SmokeTest {
                 case 5 -> survival(client);
                 case 6 -> emiSearch(client);
                 case 7 -> emiPanel(client);
+                case 8 -> creativeSearch(client);
+                case 9 -> recipeBookSearch(client);
                 default -> {}
             }
         } catch (Throwable t) {
@@ -161,8 +163,15 @@ public final class SmokeTest {
             Screens.set(null);
             keyStage = 3;
             check(ItemIndex.isBuilt(), "index built after join");
+            //#if MC >= 1.21
+            log("creative tabs handed back to the game: record reset " + com.bestinpack.index.CreativeItems.tabResets
+                    + "x, search filled directly " + com.bestinpack.index.CreativeItems.searchFills + "x");
+            check(com.bestinpack.index.CreativeItems.tabResets > 0 && com.bestinpack.index.CreativeItems.searchFills == 0,
+                    "after reading the creative tabs the game is left to build them itself (record reset)");
+            //#endif
             // Only items from the creative inventory are ranked; the config switch turns the filter off and on again.
             int skipped = ItemIndex.lastNotInCreative();
+            skippedAtJoin = skipped;
             log("items not in the creative inventory skipped = " + skipped);
             check(skipped >= 0, "creative-inventory filter active");
             Config cfgc = Config.get();
@@ -284,6 +293,11 @@ public final class SmokeTest {
             Screen inv = Screens.current();
             check(inv instanceof InventoryScreen || inv instanceof net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen, "inventory open");
             check(!(inv instanceof InventoryScreen) || BestInPackClient.buttonOf(inv) != null, "BiP button on the inventory");
+            // Issue #3: reading the creative tabs for the rankings must not leave the game's own creative search empty.
+            if (inv instanceof net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen) {
+                int hits = creativeSearchHits(client, "diamond");
+                check(hits > 0, "the game's creative search finds items when the creative inventory first opens (diamond: " + hits + ")");
+            }
             // Hover a slot holding the chestplate and press the open key: the screen must jump to the chestplate's row.
             // (The test world is creative, so this is usually the creative inventory – find the slot instead of guessing.)
             int[] at = inv instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> acs
@@ -443,17 +457,136 @@ public final class SmokeTest {
         if (ticks == 50) {
         //#endif
             Screens.set(null);
-            if (com.bestinpack.platform.Platform.get().isModLoaded("emi")) {
-                // stay in survival: its inventory leaves room for EMI's item panel
-                phase = 7;
-                ticks = 0;
+            phase = 9;   // still in survival: the recipe book's search box
+            ticks = 0;
+        }
+    }
+
+    private static int bookStage, bookTick;
+    private static java.lang.reflect.Field bookSearchField;
+
+    private static net.minecraft.client.gui.components.EditBox recipeBookSearchBox(Object book) {
+        try {
+            if (bookSearchField == null) {
+                for (java.lang.reflect.Field f : net.minecraft.client.gui.screens.recipebook.RecipeBookComponent.class.getDeclaredFields()) {
+                    if (f.getType() == net.minecraft.client.gui.components.EditBox.class) {
+                        f.setAccessible(true);
+                        bookSearchField = f;
+                        break;
+                    }
+                }
+            }
+            return bookSearchField == null ? null : (net.minecraft.client.gui.components.EditBox) bookSearchField.get(book);
+        } catch (Throwable t) {
+            log("recipe book search box not readable: " + t);
+            return null;
+        }
+    }
+
+    private static void afterRecipeBook(Minecraft client) {
+        Screens.set(null);
+        ticks = 0;
+        if (com.bestinpack.platform.Platform.get().isModLoaded("emi")) {
+            phase = 7;   // stay in survival: its inventory leaves room for EMI's item panel
+            return;
+        }
+        var server = client.getSingleplayerServer();
+        if (server != null) {
+            server.execute(() -> server.getPlayerList().getPlayers().forEach(p -> p.setGameMode(net.minecraft.world.level.GameType.CREATIVE)));
+        }
+        phase = 8;
+    }
+
+    /**
+     * The recipe book of the survival inventory: its search box takes the keys without being the screen's focused text
+     * field, so typing the open key's letter there must stay typing. Real clicks and a real key press.
+     */
+    @SuppressWarnings("rawtypes")
+    private static void recipeBookSearch(Minecraft client) {
+        Screen inv = Screens.current();
+        if (bookStage == 0) {
+            if (ticks < 5) return;
+            Screens.set(new InventoryScreen(client.player));
+            bookStage = 1;
+            bookTick = ticks;
+            return;
+        }
+        if (inv instanceof BestInPackScreen) {
+            check(false, "typing in the recipe book's search box does not open Best in Pack");
+            shot(client, "smoke_recipe_book");
+            afterRecipeBook(client);
+            return;
+        }
+        net.minecraft.client.gui.screens.recipebook.RecipeBookComponent book = null;
+        net.minecraft.client.gui.components.AbstractWidget w = null;   // the recipe book button
+        if (inv instanceof InventoryScreen) {
+            for (net.minecraft.client.gui.components.events.GuiEventListener l : inv.children()) {
+                if (l instanceof net.minecraft.client.gui.screens.recipebook.RecipeBookComponent) book = (net.minecraft.client.gui.screens.recipebook.RecipeBookComponent) l;
+                if (w == null && l instanceof net.minecraft.client.gui.components.ImageButton img && img.getWidth() == 20 && img.getHeight() == 18) w = img;
+            }
+        }
+        if (book == null || w == null) {
+            log("recipe book test skipped: " + (inv == null ? "no screen" : inv.getClass().getSimpleName()) + ", book " + (book != null) + ", button " + (w != null));
+            afterRecipeBook(client);
+            return;
+        }
+        int at = ticks - bookTick;
+        if (bookStage == 1) {   // open the book with its button
+            if (book.isVisible()) {
+                bookStage = 2;
+                bookTick = ticks;
                 return;
             }
-            if (server != null) {
-                server.execute(() -> server.getPlayerList().getPlayers().forEach(p -> p.setGameMode(net.minecraft.world.level.GameType.CREATIVE)));
+            if (at == 10) hover(client, w.getX() + 10, w.getY() + 9);
+            if (at == 18) fixHover(client);
+            if (at == 26) xraw("click", "1");
+            if (at > 150) {
+                // EMI turns the button into its own "craftables" switch, so there is no book to test there.
+                boolean emi = com.bestinpack.platform.Platform.get().isModLoaded("emi");
+                log("the recipe book did not open" + (emi ? " (EMI uses its button)" : ""));
+                if (!emi) check(false, "the recipe book opens with its button");
+                afterRecipeBook(client);
             }
-            phase = 4;
-            ticks = 0;
+            return;
+        }
+        net.minecraft.client.gui.components.EditBox box = recipeBookSearchBox(book);
+        if (box == null) {
+            check(false, "the recipe book has a search box");
+            afterRecipeBook(client);
+            return;
+        }
+        if (bookStage == 2) {   // click into the search box
+            if (box.isFocused() && at > 5) {
+                log("recipe book search box focused after " + at + " ticks, counts as typing = " + com.bestinpack.compat.HoveredItem.typing(inv));
+                xraw("key", "b");
+                bookStage = 3;
+                bookTick = ticks;
+                return;
+            }
+            if (at == 10) hover(client, box.getX() + box.getWidth() / 2.0, box.getY() + box.getHeight() / 2.0);
+            if (at == 18) fixHover(client);
+            if (at == 26) xraw("click", "1");
+            if (at > 150) {
+                check(false, "a click focuses the recipe book's search box");
+                afterRecipeBook(client);
+            }
+            return;
+        }
+        if (bookStage == 3) {
+            String typed = box.getValue();
+            if (!typed.contains("b") && at < 150) return;
+            log("recipe book search box = '" + typed + "' after " + at + " ticks");
+            check(true, "typing in the recipe book's search box does not open Best in Pack");
+            check(typed.contains("b"), "the B reached the recipe book's search box");
+            bookStage = 4;
+            bookTick = ticks;
+            return;
+        }
+        if (bookStage == 4 && at == 20) {   // a second later: the picture is the last frame drawn
+            shot(client, "smoke_recipe_book");
+            box.setValue("");
+            book.toggleVisibility();   // closed again for the next tests
+            afterRecipeBook(client);
         }
     }
 
@@ -626,7 +759,7 @@ public final class SmokeTest {
             if (server != null) {
                 server.execute(() -> server.getPlayerList().getPlayers().forEach(p -> p.setGameMode(net.minecraft.world.level.GameType.CREATIVE)));
             }
-            phase = 4;
+            phase = 8;
             ticks = 0;
         }
     }
@@ -706,6 +839,183 @@ public final class SmokeTest {
     //$$ }
     //$$
     //#endif
+    private static int searchStage, searchTick, skippedAtJoin = -2;
+
+    /** How many items the game's own creative search finds for this text - asked the way the creative screen asks. */
+    private static int creativeSearchHits(Minecraft client, String text) {
+        return creativeNameTree(client).search(text).size();
+    }
+
+    private static net.minecraft.client.searchtree.SearchTree<ItemStack> creativeNameTree(Minecraft client) {
+        //#if MC >= 1.21
+        return client.getConnection().searchTrees().creativeNameSearch();
+        //#else
+        //$$ return client.getSearchTree(net.minecraft.client.searchtree.SearchRegistry.CREATIVE_NAMES);
+        //#endif
+    }
+
+    /** The search box of the creative screen (EMI adds a search box of its own class to the same screen). */
+    private static net.minecraft.client.gui.components.EditBox creativeSearchBox(Screen screen) {
+        for (net.minecraft.client.gui.components.events.GuiEventListener l : screen.children()) {
+            if (l != null && l.getClass() == net.minecraft.client.gui.components.EditBox.class) return (net.minecraft.client.gui.components.EditBox) l;
+        }
+        return null;
+    }
+
+    //#if MC >= 1.19.3
+    /** Items in the operator tab (found by the command block in it); 0 when the tab is hidden. */
+    private static int operatorTabItems() {
+        for (net.minecraft.world.item.CreativeModeTab tab : net.minecraft.world.item.CreativeModeTabs.allTabs()) {
+            if (tab.getType() != net.minecraft.world.item.CreativeModeTab.Type.CATEGORY) continue;
+            for (ItemStack s : tab.getDisplayItems()) if (s.getItem() == Items.COMMAND_BLOCK) return tab.getDisplayItems().size();
+        }
+        return 0;
+    }
+    //#endif
+
+    /**
+     * Issue #3 - the game's own creative search with Best in Pack installed. Types into the real search box like a
+     * player (a word with the open key's letter in it), then checks that the rankings being rebuilt (also while the
+     * creative inventory is open, also with the operator tab on) never leave the search empty or the tab missing.
+     */
+    private static void creativeSearch(Minecraft client) {
+        Screen inv = Screens.current();
+        if (searchStage == 0) {   // back in creative mode (the server was asked a moment ago): open the inventory
+            boolean creativeMode = client.gameMode != null && client.gameMode.getPlayerMode() == net.minecraft.world.level.GameType.CREATIVE;
+            if (ticks < 30 || (!creativeMode && ticks < 300)) return;
+            Screens.set(new InventoryScreen(client.player));
+            searchStage = 1;
+            searchTick = ticks;
+            return;
+        }
+        if (searchStage == 1) {
+            if (ticks < searchTick + 20) return;
+            boolean creative = inv instanceof net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
+            check(creative, "creative inventory open for the search test");
+            if (!creative) {
+                Screens.set(null);
+                phase = 4;
+                ticks = 0;
+                return;
+            }
+            int hits = creativeSearchHits(client, "diamond");
+            check(hits > 0, "the game's creative search index is filled (diamond: " + hits + ")");
+            xdotool("key", "t");   // the chat key jumps to the search tab
+            searchStage = 2;
+            searchTick = ticks;
+            return;
+        }
+        if (inv instanceof BestInPackScreen && (searchStage == 2 || searchStage == 3)) {
+            check(false, "typing in the creative search box does not open Best in Pack (stage " + searchStage + ")");
+            shot(client, "smoke_creative_search");
+            Screens.set(null);
+            phase = 4;
+            ticks = 0;
+            return;
+        }
+        if (!(inv instanceof net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen screen)) {
+            check(false, "the creative inventory stayed open during the search test (stage " + searchStage + ", screen "
+                    + (inv == null ? "none" : inv.getClass().getSimpleName()) + ")");
+            phase = 4;
+            ticks = 0;
+            return;
+        }
+        net.minecraft.client.gui.components.EditBox box = creativeSearchBox(screen);
+        if (searchStage == 2) {   // wait for the search tab (slow software rendering), then type
+            boolean ready = box != null && box.isVisible();
+            if (!ready && ticks < searchTick + 100) return;
+            check(ready, "the chat key selects the creative search tab (after " + (ticks - searchTick) + " ticks)");
+            log("items in the search tab before typing = " + screen.getMenu().items.size() + ", typing counts as typing = "
+                    + com.bestinpack.compat.HoveredItem.typing(screen));
+            // "bed" has the open key's letter in it: Best in Pack must leave it to the search box.
+            xdotool("type", "--delay", "150", "bed");
+            searchStage = 3;
+            searchTick = ticks;
+            return;
+        }
+        if (searchStage == 3) {
+            String typed = box == null ? "" : box.getValue();
+            if (!typed.equals("bed") && ticks < searchTick + 200) return;
+            int shown = screen.getMenu().items.size();
+            log("creative search box = '" + typed + "' after " + (ticks - searchTick) + " ticks, items shown = " + shown);
+            check(typed.equals("bed"), "typed \"bed\" into the creative search box (the B stays a letter)");
+            check(shown > 0, "typing in the creative search box finds items (bed: " + shown + ")");
+            boolean bed = false;
+            for (ItemStack s : screen.getMenu().items) bed |= s.getItem().getDescriptionId().endsWith(".red_bed");   // no Items.RED_BED from 26.2
+            check(bed, "the creative search for \"bed\" shows the Red Bed");
+            searchStage = 4;
+            searchTick = ticks;
+            return;
+        }
+        //#if MC >= 1.19.3
+        int at = ticks - searchTick;
+        if (searchStage == 4 && at == 20) {
+            shot(client, "smoke_creative_search");   // a second later: the picture is the last frame drawn
+        } else if (searchStage == 4 && at == 25) {
+            // The rankings are rebuilt while the creative inventory is open: the search must go on working.
+            ItemIndex.rebuild(client.level, client.player);
+        } else if (searchStage == 4 && at == 35) {
+            int hits = creativeSearchHits(client, "diamond");
+            check(hits > 0, "creative search still works after the rankings were rebuilt with the inventory open (diamond: " + hits + ")");
+            // Now with the operator tab on (Options > Controls > Operator Items Tab): the tab must appear and stay.
+            client.options.operatorItemsTab().set(true);
+            Screens.set(null);
+            Screens.set(new InventoryScreen(client.player));
+        } else if (searchStage == 4 && at == 45) {
+            int op = operatorTabItems();
+            log("operator tab items = " + op + ", player may use them = " + client.player.canUseGameMasterBlocks());
+            check(op > 0, "the operator tab is filled when it is turned on (" + op + " items)");
+            ItemIndex.rebuild(client.level, client.player);   // rebuilt with the operator tab showing
+        } else if (searchStage == 4 && at == 55) {
+            int op = operatorTabItems();
+            int hits = creativeSearchHits(client, "command block");
+            check(op > 0, "the operator tab is still there after the rankings were rebuilt (" + op + " items)");
+            check(hits > 0, "creative search finds operator items after the rebuild (command block: " + hits + ")");
+            Screens.set(null);
+            ItemIndex.rebuild(client.level, client.player);   // and once more with the inventory closed
+            Screens.set(new InventoryScreen(client.player));
+        } else if (searchStage == 4 && at == 65) {
+            int op = operatorTabItems();
+            int hits = creativeSearchHits(client, "command block");
+            check(op > 0 && hits > 0, "operator tab and its search after a rebuild with the inventory closed (" + op + " items, command block: " + hits + ")");
+            check(ItemIndex.lastNotInCreative() == skippedAtJoin && !ItemIndex.ranksFor(Items.DIAMOND_SWORD).isEmpty(),
+                    "the operator tab does not change the rankings (" + ItemIndex.lastNotInCreative() + " items outside the creative inventory, as before)");
+            client.options.operatorItemsTab().set(false);
+            Screens.set(null);
+            //#if MC >= 1.21
+            // The second-best way, for a game whose record of the tabs cannot be reset: the search is filled directly.
+            // (The tabs were last built with the operator tab, so this rebuild changes them; the creative screen then
+            // finds them built the way it wants and must find the search filled as well.)
+            com.bestinpack.index.CreativeItems.testNoCacheAccess = true;
+            ItemIndex.rebuild(client.level, client.player);
+            com.bestinpack.index.CreativeItems.testNoCacheAccess = false;
+            //#endif
+            Screens.set(new InventoryScreen(client.player));
+        } else if (searchStage == 4 && at == 75) {
+            int op = operatorTabItems();
+            int hits = creativeSearchHits(client, "diamond");
+            check(op == 0, "the operator tab is hidden again when it is turned off");
+            check(hits > 0, "creative search works after the operator tab was turned off (diamond: " + hits + ")");
+            //#if MC >= 1.21
+            int opHits = creativeSearchHits(client, "command block");
+            check(com.bestinpack.index.CreativeItems.searchFills == 1 && opHits == 0,
+                    "filling the game's search directly works too (filled " + com.bestinpack.index.CreativeItems.searchFills
+                            + "x, operator items gone from the search: " + (opHits == 0) + ")");
+            //#endif
+            Screens.set(null);
+            phase = 4;
+            ticks = 0;
+        }
+        //#else
+        //$$ if (searchStage == 4 && ticks == searchTick + 20) {
+        //$$     shot(client, "smoke_creative_search");
+        //$$     Screens.set(null);
+        //$$     phase = 4;
+        //$$     ticks = 0;
+        //$$ }
+        //#endif
+    }
+
     private static void finish(Minecraft client) {
         //#if MC < 1.20
         //$$ if (!looked(client)) return;

@@ -40,8 +40,8 @@ SWAPS = [
     ("MC < 1.19.3", r"^import net\.minecraft\.core\.Holder;", "import com.bestinpack.index.legacy.Holder;", r"/ItemIndex\.java$"),
     ("MC < 1.19.3", r"^import net\.minecraft\.core\.HolderSet;", "", r"/ItemIndex\.java$"),
     # The self-test reads widget positions and focuses EMI's search box.
-    ("MC < 1.19.3", r"\b(w|bip)\.getX\(\)", r"\1.x", r"/SmokeTest\.java$"),
-    ("MC < 1.19.3", r"\b(w|bip)\.getY\(\)", r"\1.y", r"/SmokeTest\.java$"),
+    ("MC < 1.19.3", r"\b(w|bip|box)\.getX\(\)", r"\1.x", r"/SmokeTest\.java$"),
+    ("MC < 1.19.3", r"\b(w|bip|box)\.getY\(\)", r"\1.y", r"/SmokeTest\.java$"),
     ("MC < 1.19.4", r"\bsearch\)\.setFocused\(", "search).setFocus(", r"/SmokeTest\.java$"),
     # Forge 38 – 40 (1.18.x): the events had longer names.
     ("MC < 1.19", r"\bClientPlayerNetworkEvent\.LoggingIn\b", "ClientPlayerNetworkEvent.LoggedInEvent", r"/BestInPackForge\.java$"),
